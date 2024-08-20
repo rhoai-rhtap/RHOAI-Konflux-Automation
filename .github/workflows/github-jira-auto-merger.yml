@@ -1,0 +1,38 @@
+name: Auto Merge PRs
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to run the script on'
+        required: true
+        default: 'main'
+
+jobs:
+  auto-merge-prs:
+    runs-on: ubuntu-latest
+
+    permissions:
+      pull-requests: write  # Grant write permission to pull requests
+      contents: read  # Ensure that the workflow has read access to repository contents
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 0  # Fetch all history for all branches and tags
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run auto-merge script
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN_GH }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_TEST }}
+        run: Konflux-auto-merger/main.py
