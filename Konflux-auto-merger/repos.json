@@ -1,0 +1,19 @@
+{
+    "org": "rhoai-rhtap",
+    "filter_labels": "{release_version}",
+    "jira_server": "https://issues.redhat.com/",
+    "jira_project": "RHOAIENG",
+    "jira_labels": "eng,groomed",
+    "jira_issue_type": "Blocker",
+    "jira_priority": "Bug",
+    "jira_target_release": "RHOAI_{release_version}_GA",
+    "components": [
+        {
+            "component_name": "Distributed Workloads",
+            "jira_component": "Distributed Workloads",
+            "rhds_repos": [
+                "codeflare-operator"
+            ]
+        }
+    ]
+}
