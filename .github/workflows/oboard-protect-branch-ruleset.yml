@@ -1,0 +1,78 @@
+name: Onboard and Protect Branch from deletion
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'Branch name to create'
+        required: true
+        type: string
+
+jobs:
+  create-and-protect-branch:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Read Repository URLs
+      id: read-repos
+      run: |
+        REPO_FILE="repos.txt"
+        repository_urls=()
+        while IFS= read -r line; do
+          repository_urls+=("$line")
+        done < "$REPO_FILE"
+        echo "repository_urls=${repository_urls[*]}" >> $GITHUB_ENV
+
+    - name: Clone Repositories, Create Branch, Push, and Apply Protection Rules
+      env:
+        PERSONAL_ACCESS_TOKEN: ${{ secrets.RULESET_GIT }}
+      run: |
+        IFS=' ' read -r -a urls <<< "$repository_urls"
+        for repo_url in "${urls[@]}"; do
+          echo "Processing repository: $repo_url"
+          repo_name=$(basename "$repo_url" .git)
+          owner_repo=${repo_url#https://github.com/}
+          owner_repo=${owner_repo%.git} # Remove .git extension
+          echo "Owner and Repo: $owner_repo" # Debug output
+          
+          # Clone the repository using the Personal Access Token for authentication
+          git clone https://x-access-token:${PERSONAL_ACCESS_TOKEN}@${repo_url#https://}
+
+          cd "$repo_name"
+          
+          # Create the new branch
+          git checkout -b ${{ github.event.inputs.branch_name }}
+          
+          # Push the branch using the Personal Access Token for authentication
+          git push https://x-access-token:${PERSONAL_ACCESS_TOKEN}@${repo_url#https://} ${{ github.event.inputs.branch_name }}
+
+          # Apply branch protection rules
+          api_url="https://api.github.com/repos/${owner_repo}/branches/${{ github.event.inputs.branch_name }}/protection"
+          echo "API URL: $api_url" # Debug output
+
+          curl -X PUT -H "Authorization: token ${{ secrets.RULESET_GIT }}" \
+               -H "Accept: application/vnd.github.v3+json" \
+               -d '{
+                 "required_status_checks": {
+                   "strict": true,
+                   "contexts": []
+                 },
+                 "enforce_admins": true,
+                 "required_pull_request_reviews": {
+                   "dismiss_stale_reviews": true,
+                   "require_code_owner_reviews": true,
+                   "required_approving_review_count": 2
+                 },
+                 "restrictions": null,
+                 "required_linear_history": true,
+                 "allow_force_pushes": false,
+                 "allow_deletions": false
+               }' \
+               "$api_url" || { echo "Failed to apply protection rules for ${repo_name}"; exit 1; }
+          
+          cd ..
+          rm -rf "$repo_name"
+        done
