@@ -1,0 +1,17 @@
+https://github.com/rhoai-rhtap/codeflare-operator.git
+https://github.com/rhoai-rhtap/training-operator.git
+https://github.com/rhoai-rhtap/rhods-operator.git
+https://github.com/rhoai-rhtap/ml-metadata.git
+https://github.com/rhoai-rhtap/argo-workflows.git
+https://github.com/rhoai-rhtap/odh-dashboard.git
+https://github.com/rhoai-rhtap/data-science-pipelines-operator.git
+https://github.com/rhoai-rhtap/kubeflow.git
+https://github.com/rhoai-rhtap/modelmesh-runtime-adapter.git
+https://github.com/rhoai-rhtap/modelmesh.git
+https://github.com/rhoai-rhtap/odh-model-controller.git
+https://github.com/rhoai-rhtap/kuberay.git
+https://github.com/rhoai-rhtap/data-science-pipelines-dsp.git
+https://github.com/rhoai-rhtap/data-science-pipelines.git
+https://github.com/rhoai-rhtap/modelmesh-serving.git
+https://github.com/rhoai-rhtap/rest-proxy.git
+https://github.com/rhoai-rhtap/kueue.git
