@@ -122,7 +122,7 @@ jobs:
                 echo "Updated version inside $new_file_name from $current_version to $new_version and rhoai reference from $current_rhoai to $new_rhoai"
 
                 # Append pathChanged() condition after the line containing '== "rhoai-x.y"'
-                sed -i '/== "rhoai-[0-9]*\.[0-9]*"/a \      && !"bundle\/manifests\/rhods-operator.clusterserviceversion.yml".pathChanged()' "$new_file_name"
+                sed -i '/== "rhoai-[0-9]*\.[0-9]*"/a \      && !"bundle\/manifests\/rhods-operator.clusterserviceversion.yaml".pathChanged()' "$new_file_name"
                 echo "Appended pathChanged() after '== rhoai-x.y' in $new_file_name"
               fi
             done
