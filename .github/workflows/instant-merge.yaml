@@ -1,0 +1,31 @@
+name: Instant Merge Konflux PRs
+
+on:
+  pull_request:
+    branches:
+      - 'rhoai-*'  # Trigger the workflow on pushes to any rhoai-* branch
+    types:
+      - opened
+    paths:
+      - bundle/bundle-patch.yaml
+
+env:
+  COMPONENT_NAME: odh-operator-bundle-v2-
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: write
+  security-events: write
+  statuses: write
+
+jobs:
+  instant-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: instant-merge
+        if: ${{ github.event.sender.login == 'red-hat-konflux[bot]' && ( startsWith(github.event.pull_request.title, '$COMPONENT_NAME') || contains(github.event.pull_request.title, '$COMPONENT_NAME') ) }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge --merge --admin ${{ github.event.pull_request.html_url }}
