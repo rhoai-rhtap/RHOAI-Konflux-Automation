@@ -3,7 +3,7 @@ name: Sync Bundle from Operator Repo to RBC Repo
 on:
   push:
     branches:
-      - 'rhoai-*'  # Trigger the workflow on pushes to any rhoai-* branch
+      - 'rhoai-2.16'  # Trigger the workflow on pushes to any rhoai-* branch
     paths:
       - 'bundle/**'  # Trigger the workflow for changes to any file in the bundle directory
       - 'Dockerfiles/bundle.Dockerfile'  # Trigger the workflow for changes to the Dockerfile
