@@ -4,24 +4,21 @@
     "config:recommended"
   ],
   "branchPrefix": "renovate/",
-  "baseBranches": ["main"],
-  "ignoreTests": true,
-  "automergeType": "pr",
-  "automerge": true,
-  "enabledManagers": ["dockerfile", "tekton"],
+  "baseBranches": ["non-existing-branch"],
+  "automerge": false,
   "packageRules": [
     {
       "matchUpdateTypes": ["*"],
       "enabled": false
     },
     {
-      "matchUpdateTypes": ["digest"],
-      "enabled": true
+      "matchFileNames": ["*"],
+      "enabled": false
     },
     {
-      "matchFileNames": ["*Dockerfile*", ".tekton/**"],
-      "enabled": true
+      "matchManagers": ["*"],
+      "enabled": false
     }
   ],
- "prHourlyLimit": 0
+ "prHourlyLimit": 1
 }
