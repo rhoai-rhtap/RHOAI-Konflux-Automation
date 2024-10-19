@@ -52,18 +52,17 @@ jobs:
       - name: run commands
         run: |
           echo "triggering nightly build for ${{ matrix.release }}"
-
-#      - uses: lasith-kg/dispatch-workflow@v1
-#        id: workflow-dispatch
-#        name: Trigger Nightly
-#        with:
-#          dispatch-method: workflow_dispatch
-#          repo: RHOAI-Build-Config
-#          owner: ${{ env.GITHUB_ORG }}
-#          ref: ${{ matrix.release }}
-#          workflow: trigger-nightly-operator-build.yaml
-#          token: ${{ steps.app-token.outputs.token }}
-#          workflow-inputs: {}
+      - uses: lasith-kg/dispatch-workflow@v1
+        id: workflow-dispatch
+        name: Trigger Nightly
+        with:
+          dispatch-method: workflow_dispatch
+          repo: RHOAI-Build-Config
+          owner: ${{ env.GITHUB_ORG }}
+          ref: ${{ matrix.release }}
+          workflow: trigger-nightly-operator-build.yaml
+          token: ${{ steps.app-token.outputs.token }}
+          workflow-inputs: {}
 #      - name: Trigger Nightly
 #        uses: adityakar/workflow-dispatcher@v1.0
 #        with:
