@@ -47,7 +47,7 @@ jobs:
             fi
           done < <(echo $releases | jq -r '.[]')
           
-          releases=$(printf '%s\n' "${filtered_releases[@]}" | jq -R . | jq -s . | sed 's/ //g' | awk NF=NF RS= OFS=)
+          releases=$(jq -c -n '$ARGS.positional' --args "${filtered_releases[@]}" | sed 's/ //g' | awk NF=NF RS= OFS=)
           echo "This job will trigger nightlies for: $releases"
           echo "releases=$releases" >> $GITHUB_OUTPUT
   trigger-nightly:
