@@ -26,6 +26,11 @@ jobs:
         run: |
           releases=$(yq -o json $SOURCE_MAP)
           releases=$(echo $releases | jq -r '.releases' | sed 's/ //g' | awk NF=NF RS= OFS=)
+          if [[ "${{ github.event_name  }}" == "workflow_dispatch" ]]
+          then
+            releases=$(echo $releases | jq -c 'map(select(. == "${{ github.event.inputs.release }}"))'  | sed 's/ //g' | awk NF=NF RS= OFS=)
+          fi
+          echo "This job will trigger nightlies for: $releases"
           echo "releases=$releases" >> $GITHUB_OUTPUT
   trigger-nightly:
     needs: [ setup ]
