@@ -76,11 +76,11 @@ jobs:
           workflow: trigger-nightly-operator-build.yaml
           token: ${{ steps.app-token.outputs.token }}
           workflow-inputs: '{}'
-#          discover: true
-#      - name: Display the Workflow Run Info
-#        run: |
-#          echo "run-id = ${{ steps.trigger-nightly.outputs.run-id }}"
-#          echo "run-url = ${{ steps.trigger-nightly.outputs.run-url }}"
+          discover: true
+      - name: Display the Workflow Run Info
+        run: |
+          echo "run-id = ${{ steps.trigger-nightly.outputs.run-id }}"
+          echo "run-url = ${{ steps.trigger-nightly.outputs.run-url }}"
 #      - name: Trigger Nightly
 #        uses: adityakar/workflow-dispatcher@v1.0
 #        with:
