@@ -1,0 +1,69 @@
+name: Trigger Nightly Build
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      release:
+        required: true
+        type: string
+        description: RHOAI Version to trigger the nightly build for
+
+env:
+  GITHUB_ORG: rhoai-rhtap
+  SOURCE_MAP: "config/releases.yaml"
+
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      releases: ${{ steps.extract.outputs.releases }}
+    steps:
+      - name: Extract all versions
+        id: extract
+        run: |
+          releases=$(yq -o json $SOURCE_MAP)
+          releases=$(echo $releases | jq -r '.releases' | sed 's/ //g' | awk NF=NF RS= OFS=)
+          echo "releases=$releases" >> $GITHUB_OUTPUT
+  trigger-nightly:
+    needs: [ setup ]
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        release: ${{ fromJSON(needs.setup.outputs.releases) }}
+    steps:
+      - name: Generate github-app token
+        id: app-token
+        uses: getsentry/action-github-app-token@v2
+        with:
+          app_id: ${{ secrets.RHOAI_DEVOPS_APP_ID }}
+          private_key: ${{ secrets.RHOAI_DEVOPS_APP_PRIVATE_KEY }}
+      - name: run commands
+        run: |
+          echo "triggering nightly build for ${{ matrix.release }}"
+
+#      - uses: lasith-kg/dispatch-workflow@v1
+#        id: workflow-dispatch
+#        name: Trigger Nightly
+#        with:
+#          dispatch-method: workflow_dispatch
+#          repo: RHOAI-Build-Config
+#          owner: ${{ env.GITHUB_ORG }}
+#          ref: ${{ matrix.release }}
+#          workflow: trigger-nightly-operator-build.yaml
+#          token: ${{ steps.app-token.outputs.token }}
+#          workflow-inputs: {}
+#      - name: Trigger Nightly
+#        uses: adityakar/workflow-dispatcher@v1.0
+#        with:
+#          owner: ${{ env.GITHUB_ORG }}
+#          repo: RHOAI-Build-Config
+#          token: ${{ steps.app-token.outputs.token }}
+#          event_type: build
+#          client_payload: '{}'
+#          wait_time: 5
+#          max_time: 180
