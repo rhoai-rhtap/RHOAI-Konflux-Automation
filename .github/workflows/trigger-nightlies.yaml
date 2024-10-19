@@ -57,7 +57,7 @@ jobs:
         name: Trigger Nightly
         with:
           dispatch-method: workflow_dispatch
-          repo: RHOAI-Build-Config
+          repo: rhods-operator
           owner: ${{ env.GITHUB_ORG }}
           ref: ${{ matrix.release }}
           workflow: trigger-nightly-operator-build.yaml
