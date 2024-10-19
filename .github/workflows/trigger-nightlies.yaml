@@ -13,6 +13,7 @@ on:
 env:
   GITHUB_ORG: rhoai-rhtap
   SOURCE_MAP: "config/releases.yaml"
+  MIN_RELEASE: 216
 
 
 jobs:
@@ -32,6 +33,21 @@ jobs:
           then
             releases=$(echo $releases | jq -c 'map(select(. == "${{ github.event.inputs.release }}"))'  | sed 's/ //g' | awk NF=NF RS= OFS=)
           fi
+          
+          #ensure the nightlies are not triggered for any non-konflux version
+          min_release=${{ env.MIN_RELEASE }}
+          filtered_releases=()
+          while IFS= read -r release
+          do
+            version_number=${release/rhoai-/}
+            version_number=${version_number/./}
+            if [[ $version_number -ge $min_release ]]
+            then
+              filtered_releases+=("$release")
+            fi
+          done < <(echo $releases | jq -r '.[]')
+          
+          releases=$(printf '%s\n' "${filtered_releases[@]}" | jq -R . | jq -s . | sed 's/ //g' | awk NF=NF RS= OFS=)
           echo "This job will trigger nightlies for: $releases"
           echo "releases=$releases" >> $GITHUB_OUTPUT
   trigger-nightly:
@@ -53,7 +69,7 @@ jobs:
         run: |
           echo "triggering nightly build for ${{ matrix.release }}"
       - uses: lasith-kg/dispatch-workflow@v1
-        id: workflow-dispatch
+        id: trigger-nightly
         name: Trigger Nightly
         with:
           dispatch-method: workflow_dispatch
@@ -63,6 +79,11 @@ jobs:
           workflow: trigger-nightly-operator-build.yaml
           token: ${{ steps.app-token.outputs.token }}
           workflow-inputs: '{}'
+          discover: true
+      - name: Display the Workflow Run Info
+        run: |
+          echo "run-id = ${{ steps.trigger-nightly.outputs.run-id }}"
+          echo "run-url = ${{ steps.trigger-nightly.outputs.run-url }}"
 #      - name: Trigger Nightly
 #        uses: adityakar/workflow-dispatcher@v1.0
 #        with:
