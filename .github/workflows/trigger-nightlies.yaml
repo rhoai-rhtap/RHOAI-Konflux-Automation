@@ -8,7 +8,7 @@ on:
       release:
         required: true
         type: string
-        description: RHOAI Version to trigger the nightly build for
+        description: RHOAI Version
 
 env:
   GITHUB_ORG: rhoai-rhtap
@@ -65,10 +65,7 @@ jobs:
         with:
           app_id: ${{ secrets.RHOAI_DEVOPS_APP_ID }}
           private_key: ${{ secrets.RHOAI_DEVOPS_APP_PRIVATE_KEY }}
-      - name: run commands
-        run: |
-          echo "triggering nightly build for ${{ matrix.release }}"
-      - uses: lasith-kg/dispatch-workflow@v1
+      - uses: lasith-kg/dispatch-workflow@v2.0.0
         id: trigger-nightly
         name: Trigger Nightly
         with:
