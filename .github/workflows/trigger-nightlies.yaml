@@ -81,13 +81,3 @@ jobs:
         run: |
           echo "run-id = ${{ steps.trigger-nightly.outputs.run-id }}"
           echo "run-url = ${{ steps.trigger-nightly.outputs.run-url }}"
-#      - name: Trigger Nightly
-#        uses: adityakar/workflow-dispatcher@v1.0
-#        with:
-#          owner: ${{ env.GITHUB_ORG }}
-#          repo: RHOAI-Build-Config
-#          token: ${{ steps.app-token.outputs.token }}
-#          event_type: build
-#          client_payload: '{}'
-#          wait_time: 5
-#          max_time: 180
