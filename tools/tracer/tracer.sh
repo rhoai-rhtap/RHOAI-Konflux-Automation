@@ -110,6 +110,7 @@ then
   chmod +x update.sh
   ./tools/tracer/./update.sh "${current_script_path}"
   cd $current_dir
+  rm -rf $temp
   exit
 fi
 
