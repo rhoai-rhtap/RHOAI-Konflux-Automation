@@ -1,6 +1,7 @@
 #!/bin/bash
 export > /dev/null 2>&1
 
+
 RBC_REPO=https://github.com/red-hat-data-services/RHOAI-Build-Config
 BUILD_TYPE=ci
 IMAGE_TYPE=fbc
@@ -17,10 +18,26 @@ IMAGE_URI=
 FULL_IMAGE_URI_WITH_DIGEST=
 TEXT_OUTPUT=
 
+function help() {
+  echo "Usage: tracer.sh [-h] [-v] [-c] [-n] [-b] [--skip-image-verification] [--skip-tls]"
+  echo "  -h, --help  Display this help message"
+  echo "  -v, --rhoai-version  RHOAI version to get the info for, valid formats - X.Y, rhoai-X.Y, vX.Y, default value is latest RHOAI version"
+  echo "  -d, --digest  Complete digest of the image to be provided as an input"
+  echo "  -c --show-commits  Show the commits info for all the components"
+  echo "  -n --nightly  Show the info of latest nightly build"
+  echo "  -b --bundle  Show the info about operator bundle image, by default it will show FBC image info"
+  echo "  -i --image  complete URI for the image to be provided as an input"
+}
+
+
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
+        --help | -h)
+        help
+        exit
+        ;;
         --rhoai-version | -v)
         TAG="$2"
         shift
@@ -65,6 +82,7 @@ while [[ $# -gt 0 ]]; do
         ;;
     esac
 done
+
 
 if [[ $CONFIGURE == "true" ]]
 then
