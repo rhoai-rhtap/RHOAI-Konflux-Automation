@@ -92,6 +92,27 @@ then
   exit
 fi
 
+if [[ $UPDATE == "true" ]]
+then
+  git_url=https://github.com/rhoai-rhtap/RHOAI-Konflux-Automation
+  current_script_path=$(realpath $0)
+  current_dir=$(dirname "${current_script_path}")
+  temp=$(mktemp -d)
+  cd $temp
+  git config --global init.defaultBranch main
+  git init
+  git remote add origin $git_url
+  git config core.sparseCheckout true
+  git config core.sparseCheckoutCone false
+  echo "tools/tracer" >> .git/info/sparse-checkout
+  git fetch --depth=1 origin main
+  git checkout main
+  chmod +x update.sh
+  ./tools/tracer/./update.sh "${current_script_path}"
+  cd $current_dir
+  exit
+fi
+
 if [[ -z $TAG ]]; then TAG=$(git ls-remote --heads $RBC_REPO | grep 'rhoai' | awk -F'/' '{print $NF}' | sort -V | tail -1); fi
 if [[ -z $IMAGE ]]
 then
