@@ -107,8 +107,8 @@ then
   echo "tools/tracer" >> .git/info/sparse-checkout
   git fetch --depth=1 origin main
   git checkout main
-  chmod +x update.sh
-  ./tools/tracer/./update.sh "${current_script_path}"
+  cp tools/tracer/tracer.sh "${current_script_path}"
+  echo "Tracer is updated successfully!"
   cd $current_dir
   rm -rf $temp
   exit
