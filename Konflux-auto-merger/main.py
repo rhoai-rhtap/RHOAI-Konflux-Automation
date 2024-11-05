@@ -6,6 +6,7 @@ import subprocess
 import argparse
 import sys
 import time
+import yaml
 
 # ANSI escape codes for color
 GREEN = '\033[92m'
@@ -34,6 +35,25 @@ def load_config():
         print(f"{RED}Error: 'repos.json' file is not a valid JSON.{RESET}")
         raise
 
+def load_releases():
+    try:
+        with open('releases.yaml', 'r') as file:
+            release_config = yaml.safe_load(file)
+        return release_config.get('releases', [])
+    except FileNotFoundError:
+        print(f"{RED}Error: 'releases.yaml' file not found.{RESET}")
+        raise
+    except yaml.YAMLError:
+        print(f"{RED}Error: 'releases.yaml' file is not a valid YAML.{RESET}")
+        raise
+
+def validate_branch(branch, allowed_releases):
+    if branch not in allowed_releases:
+        print(f"{RED}Branch '{branch}' is not in the list of allowed releases. Exiting.{RESET}")
+        sys.exit(1)  # Exit with non-zero status if branch is not allowed
+    else:
+        print(f"{GREEN}Branch '{branch}' is valid and allowed to proceed.{RESET}")
+
 def fetch_open_prs(org, repo, branch):
     headers = {'Authorization': f'token {GITHUB_TOKEN}'}
     url = f'{GITHUB_API_URL}/repos/{org}/{repo}/pulls?state=open&base={branch}'
@@ -46,18 +66,24 @@ def get_jira_id_from_pr(pr):
     title = pr.get('title', '')
     body = pr.get('body', '')
 
+    # Ensure title and body are strings
+    title = str(title)
+    body = str(body)
+
     jira_id_pattern = r'[A-Z]+-\d+'
     
+   # Check the title for a JIRA ID
     jira_id_match = re.search(jira_id_pattern, title)
     if jira_id_match:
-        jira_id = jira_id_match.group(0)
-        return jira_id
+        return jira_id_match.group(0)  # Return the found JIRA ID
 
+    # Check the body for a JIRA ID
     jira_id_match = re.search(jira_id_pattern, body)
     if jira_id_match:
-        jira_id = jira_id_match.group(0)
-        return jira_id
+        return jira_id_match.group(0)  # Return the found JIRA ID
 
+    # Return a message if no JIRA ID was found
+    #return "No JIRA ID found in PR"
     return None
 
 def get_jira_issue_details(jira_id, max_retries=3):
@@ -112,8 +138,40 @@ def merge_pr(org, repo, pr_number):
     
     if response.status_code == 200:
         print(f"{GREEN}PR #{pr_number} in repo {repo} was successfully merged.{RESET}")
+
+        # After merging, add a comment to the JIRA issue
+        jira_id = get_jira_id_from_pr(pr)  # Obtain the JIRA ID from the PR
+        if jira_id:
+            pr_link = f"https://github.com/{org}/{repo}/pull/{pr_number}"  # Construct the PR link
+            comment_on_jira_issue(jira_id, "The associated pull request has been merged.", pr_link)
     else:
         print(f"{RED}Failed to merge PR #{pr_number} in repo {repo}. Response: {response.status_code} - {response.json()}{RESET}")
+
+def comment_on_jira_issue(jira_id, comment, pr_link, max_retries=3):
+    headers = {
+        'Authorization': f'Bearer {JIRA_API_TOKEN}',
+        'Content-Type': 'application/json'
+    }
+    url = f'{JIRA_SERVER}/rest/api/2/issue/{jira_id}/comment'
+    full_comment = f"{comment}\n\n[View Pull Request]({pr_link})"  # Add the PR link to the comment
+    data = {
+        'body': full_comment
+    }
+
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(url, headers=headers, json=data)
+            response.raise_for_status()
+            print(f"{GREEN}Comment added to JIRA issue {jira_id}.{RESET}")
+            return
+        except requests.exceptions.HTTPError as err:
+            print(f"{RED}Failed to add comment to JIRA issue {jira_id}: {err}{RESET}")
+            time.sleep(2 ** attempt)  # Exponential backoff
+        except Exception as err:
+            print(f"{RED}Unexpected error while commenting on JIRA issue {jira_id}: {err}{RESET}")
+            time.sleep(2 ** attempt)  # Exponential backoff
+
+    print(f"{RED}Failed to add comment to JIRA issue {jira_id} after {max_retries} attempts.{RESET}")
 
 def checkout_branch(org, repo, branch):
     try:
@@ -125,12 +183,37 @@ def checkout_branch(org, repo, branch):
         print(f"{RED}Error: The branch '{branch}' does not exist in the repository '{repo}'.{RESET}")
         sys.exit(1)  # Exit with non-zero status to indicate failure
 
+def is_user_in_org(org, username):
+    headers = {'Authorization': f'token {GITHUB_TOKEN}'}
+    url = f'{GITHUB_API_URL}/orgs/{org}/members/{username}'
+    response = requests.get(url, headers=headers)
+    return response.status_code == 204  # 204 No Content means the user is a member
+
+def check_authors(org, pr):
+    pr_author = pr['user']['login']  # Original PR author
+
+    # Check if the PR author is a member of the organization
+    if not is_user_in_org(org, pr_author):
+        print(f"{RED}PR author '{pr_author}' is not a member of the '{org}' organization.{RESET}")
+        return False  # Skip if the author is not in the organization
+
+    # If PR author is valid, we don't need to check individual commits
+    print(f"{GREEN}PR author '{pr_author}' is a valid member of the organization.{RESET}")
+    return True
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process GitHub repositories and JIRA issues.')
     parser.add_argument('--branch', required=True, help='Branch name to check out and process')
     args = parser.parse_args()
 
     branch_name = args.branch
+
+    # Load allowed releases and validate branch
+    allowed_releases = load_releases()
+    validate_branch(branch_name, allowed_releases)
+
+    # Load main configuration and proceed if branch is valid
     config = load_config()
     org = config['org']
     all_prs_found = False
@@ -141,27 +224,24 @@ if __name__ == "__main__":
             open_prs = fetch_open_prs(org, repo, branch_name)
 
             if not open_prs:
-                print(f"{RED}No open PRs found for repo: {repo} on branch: {branch_name}.{RESET}")
-                sys.exit(1)  # Exit with non-zero status if no PRs found
+                print(f"{RED}No open PRs found for repo: {repo}.{RESET}")
+                continue
 
-            print(f"{GREEN}Found {len(open_prs)} open PR(s) for repo: {repo} on branch: {branch_name}.{RESET}")
-
-            any_blocker_pr_found = False
             for pr in open_prs:
+                if not check_authors(org, pr):
+                    print(f"{RED}Skipping PR #{pr['number']} due to author checks.{RESET}")
+                    continue
+
                 jira_id = get_jira_id_from_pr(pr)
                 if jira_id:
                     jira_details = get_jira_issue_details(jira_id)
-                    if jira_details and jira_details.get('fields', {}).get('priority', {}).get('name', '') == 'Blocker':
-                        print(f"{GREEN}Found PR #{pr['number']} with 'Blocker' priority in repo: {repo}. Proceeding to merge...{RESET}")
-                        any_blocker_pr_found = True
+                    if jira_details and jira_details.get('fields', {}).get('priority', {}).get('name') == 'Blocker':
+                        print(f"{GREEN}Merging PR #{pr['number']} in repo {repo} because JIRA {jira_id} is a Blocker issue.{RESET}")
                         if check_pr_mergeable(org, repo, pr['number']):
                             merge_pr(org, repo, pr['number'])
-
-            if not any_blocker_pr_found:
-                print(f"{RED}No PRs with 'Blocker' priority found in repo: {repo} on branch: {branch_name}.{RESET}")
-                sys.exit(1)  # Exit with non-zero status if no blocker PRs found
-
-            os.chdir('..')  # Go back to the previous directory
-
-    print(f"{GREEN}Workflow completed successfully.{RESET}")
-    sys.exit(0)  # Exit with zero status to indicate success
+                        else:
+                            print(f"{RED}PR #{pr['number']} is not mergeable.{RESET}")
+                    else:
+                        print(f"{RED}Skipping PR #{pr['number']} as the JIRA issue {jira_id} is not a Blocker.{RESET}")
+                else:
+                    print(f"{RED}No JIRA ID found in PR #{pr['number']}. Skipping.{RESET}")
