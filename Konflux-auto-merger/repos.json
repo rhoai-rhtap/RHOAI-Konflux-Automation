@@ -4,16 +4,51 @@
     "jira_server": "https://issues.redhat.com/",
     "jira_project": "RHOAIENG",
     "jira_labels": "eng,groomed",
-    "jira_issue_type": "Blocker",
-    "jira_priority": "Bug",
-    "jira_target_release": "RHOAI_{release_version}_GA",
+    "jira_priority": "Blocker",
     "components": [
+        {
+            "component_name": "Dashboard",
+            "jira_component": "UI",
+            "rhds_repos": ["odh-dashboard"]
+        },
+        {
+            "component_name": "Data Science Pipelines",
+            "jira_component": "Pipelines",
+            "rhds_repos": ["data-science-pipelines", "data-science-pipelines-operator"]
+        },
+        {
+            "component_name": "RHODS Operator",
+            "jira_component": "Install Upgrade Uninstall",
+            "rhds_repos": ["rhods-operator"]
+        },
+        {
+            "component_name": "Model Serving",
+            "jira_component": "Model Serving",
+            "rhds_repos": [
+                "trustyai-explainability/trustyai-explainability",
+                "trustyai-explainability/trustyai-service-operator",
+                "kserve",
+                "modelmesh-serving",
+                "rest-proxy",
+                "odh-model-controller",
+                "modelmesh",
+                "modelmesh-runtime-adapter"
+            ]
+        },
+        {
+            "component_name": "Workbenches",
+            "jira_component": "Workbenches",
+            "rhds_repos": ["notebooks", "kubeflow"]
+        },
         {
             "component_name": "Distributed Workloads",
             "jira_component": "Distributed Workloads",
-            "rhds_repos": [
-                "codeflare-operator"
-            ]
+            "rhds_repos": ["kuberay", "codeflare-operator"]
+        },
+        {
+            "component_name": "Documentation",
+            "jira_component": "Documentation",
+            "rhds_repos": []
         }
     ]
 }

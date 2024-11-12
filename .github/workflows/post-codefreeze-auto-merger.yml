@@ -1,59 +1,62 @@
-name: Auto Merge PRs
-
+name: Process PR
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to run the Python script on'
+      pr_id:
+        description: 'PR ID'
         required: true
-        default: 'main'
+        type: string
+      repo:
+        description: 'Repository name'
+        required: true
+        type: string
 
 jobs:
-  auto-merge-prs:
+  process_pr:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Fetch all history for all branches
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      
-      # Run the Python script and capture the output in a file
-      - name: Run Python Script
-        id: run_script
+      - name: Run Python script with PR ID and repo
+        id: process_pr_script
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN_GH }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_TEST }}
         run: |
-          python Konflux-auto-merger/main.py --branch "${{ github.event.inputs.branch }}" | tee script_output.txt
-      
-      # Read the output from the file and save it to a formatted Slack message
-      - name: Summary
+          output=$(python main.py --pr-id ${{ github.event.inputs.pr_id }} --repo ${{ github.event.inputs.repo }})
+          echo "Script output: $output"
+          echo "$output" > script_output.txt
+          
+      - name: Generate and Clean Summary Output
         id: summary
         run: |
-          # Read the output from the script and remove ANSI escape codes
-          output=$(cat script_output.txt | sed 's/\x1B\[[0-9;]*m//g')
-
-          # Replace valid messages with checkmarks and invalid messages with cross marks
-          formatted_output=$(echo "$output" | sed -E 's/(valid.*|allowed.*)/✅ &/g; s/(No JIRA ID.*|not a member.*)/❌ &/g')
-
-          # Prepare the Slack message with user or channel mentions
-          slack_message="*Branch:* ${GITHUB_REF}\n*Output:*\n${formatted_output}\n\n<!channel>  :here!" 
-
-          # Prepare the message for Slack using GITHUB_OUTPUT
-          echo 'slack-message<<EOF' >> $GITHUB_OUTPUT
-          echo "$slack_message" >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+          # Capture output from the script
+          output=$(cat script_output.txt)
+        
+          # Ensure the output is not empty
+          if [ -z "$output" ]; then
+            echo "No output from script."
+            output="No relevant information generated."
+          fi
+          formatted_output=$(echo "$output" | sed -E 's/\x1b\[[0-9;]*m//g')
+          # Remove commit information (if present in the output)
+          formatted_output=$(echo "$formatted_output" | sed '/Commit/d')
+          # Get PR ID and Repo name from the input
+          pr_id="${{ github.event.inputs.pr_id }}"
+          repo="${{ github.event.inputs.repo }}"
+        
+          # Construct the PR URL using the provided repo name
+          pr_url="https://github.com/rhoai-rhtap/${repo}/pull/${pr_id}"
+          # Prepare the Slack message with cleaner formatting
+          #slack_message="*PR ID:* ${pr_id}$'\n'*Repository:* ${repo}$'\n'*PR URL:* ${pr_url}$'\n'*Output:*$'\n'${formatted_output}$'\n'!"
+          slack_message="*PR ID:* ${pr_id}\n*Repository:* ${repo}\n*PR URL:* ${pr_url}\n*Output:*\n${formatted_output}\n:here!"
+          # Set the message for Slack using GITHUB_OUTPUT
+          {
+            echo "slack-message<<EOF"
+            echo -e "$slack_message"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
           
       # Slack Notification on Success
       - name: Slack Notification on Success
@@ -66,7 +69,6 @@ jobs:
           SLACK_MESSAGE: ${{ steps.summary.outputs.slack-message }}
           SLACK_ICON: https://avatars.githubusercontent.com/u/95714513?s=400&u=a00afc56cfc57ef9aa0fab1540f70a8507df3e96
           SLACK_COLOR: '#36a64f'  # Green color for success
-
       # Slack Notification on Failure
       - name: Slack Notification on Failure
         if: ${{ failure() }}
@@ -76,5 +78,5 @@ jobs:
           SLACK_USERNAME: "Auto-Merge"
           SLACK_TITLE: "Merge Failed"
           SLACK_MESSAGE: ${{ steps.summary.outputs.slack-message }}
-          SLACK_ICON: https://avatars.githubusercontent.com/u/957145c56cfc57ef9aa0fab1540f70a8507df3e96
+          SLACK_ICON: https://avatars.githubusercontent.com/u/95714513?s=400&u=a00afc56cfc57ef9aa0fab1540f70a8507df3e96
           SLACK_COLOR: '#ff0000'  # Red color for failure
