@@ -1,4 +1,4 @@
-name: Process PR
+name: Auto merge PRs
 on:
   workflow_dispatch:
     inputs:
