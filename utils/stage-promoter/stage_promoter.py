@@ -137,6 +137,10 @@ class snapshot_processor:
                 fbc_images[ocp_version] = 'NOT_FOUND'
                 missing_images.append(ocp_version)
 
+        keys = list(fbc_images.keys())
+        keys.sort()
+        fbc_images = {key: fbc_images[key] for key in keys}
+
         json.dump(fbc_images, open(self.output_file_path, 'w'))
         if missing_images:
             print('FBC images not found for following OCP versions - ', missing_images)
