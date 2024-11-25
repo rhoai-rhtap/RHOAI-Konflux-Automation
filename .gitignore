@@ -1,2 +1,3 @@
 .idea/*
 utils/operator-processor/*.yaml
+utils/release-helper/release-*/*.yaml
