@@ -1,3 +1,4 @@
 .idea/*
 utils/operator-processor/*.yaml
 utils/release-helper/release-*/**
+utils/release-helper/stage-release-*/**
