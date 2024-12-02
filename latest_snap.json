@@ -1,0 +1,431 @@
+{
+    "apiVersion": "appstudio.redhat.com/v1alpha1",
+    "kind": "Snapshot",
+    "metadata": {
+        "annotations": {
+            "build.appstudio.openshift.io/repo": "https://github.com/red-hat-data-services/RHOAI-Build-Config?rev=7804e7b01ed20f21878b2b2b270a3b23a46547c3",
+            "build.appstudio.redhat.com/commit_sha": "7804e7b01ed20f21878b2b2b270a3b23a46547c3",
+            "build.appstudio.redhat.com/target_branch": "rhoai-2.16",
+            "pac.test.appstudio.openshift.io/branch": "rhoai-2.16",
+            "pac.test.appstudio.openshift.io/check-run-id": "33099107335",
+            "pac.test.appstudio.openshift.io/controller-info": "{\"name\":\"default\",\"configmap\":\"pipelines-as-code\",\"secret\":\"pipelines-as-code-secret\", \"gRepo\": \"pipelines-as-code\"}",
+            "pac.test.appstudio.openshift.io/event-type": "push",
+            "pac.test.appstudio.openshift.io/git-auth-secret": "pac-gitauth-ucrkot",
+            "pac.test.appstudio.openshift.io/git-provider": "github",
+            "pac.test.appstudio.openshift.io/installation-id": "54743998",
+            "pac.test.appstudio.openshift.io/log-url": "https://konflux.apps.stone-prod-p02.hjvn.p1.openshiftapps.com/application-pipeline/ns/rhoai-tenant/pipelinerun/rhoai-fbc-fragment-v2-16-on-schedule-4b5zx",
+            "pac.test.appstudio.openshift.io/max-keep-runs": "3",
+            "pac.test.appstudio.openshift.io/on-cel-expression": "event == \"push\" \u0026\u0026 target_branch == \"rhoai-2.16\" \u0026\u0026 \"schedule/catalog-tekton-trigger.txt\".pathChanged()",
+            "pac.test.appstudio.openshift.io/original-prname": "rhoai-fbc-fragment-v2-16-on-schedule",
+            "pac.test.appstudio.openshift.io/repo-url": "https://github.com/red-hat-data-services/RHOAI-Build-Config",
+            "pac.test.appstudio.openshift.io/repository": "odh-operator-bundle-v2-16",
+            "pac.test.appstudio.openshift.io/sender": "github-actions[bot]",
+            "pac.test.appstudio.openshift.io/sha": "7804e7b01ed20f21878b2b2b270a3b23a46547c3",
+            "pac.test.appstudio.openshift.io/sha-title": "Updating the catalog.yaml with latest images and patches",
+            "pac.test.appstudio.openshift.io/sha-url": "https://github.com/red-hat-data-services/RHOAI-Build-Config/commit/7804e7b01ed20f21878b2b2b270a3b23a46547c3",
+            "pac.test.appstudio.openshift.io/source-branch": "refs/heads/rhoai-2.16",
+            "pac.test.appstudio.openshift.io/source-repo-url": "https://github.com/red-hat-data-services/RHOAI-Build-Config",
+            "pac.test.appstudio.openshift.io/state": "completed",
+            "pac.test.appstudio.openshift.io/url-org": "red-hat-data-services",
+            "pac.test.appstudio.openshift.io/url-repository": "RHOAI-Build-Config",
+            "test.appstudio.openshift.io/pipelinerunstarttime": "1731842681",
+            "test.appstudio.openshift.io/source-repo-url": "https://github.com/red-hat-data-services/RHOAI-Build-Config",
+            "test.appstudio.openshift.io/status": "[{\"scenario\":\"rhoai-v2-16-enterprise-contract\",\"status\":\"TestFail\",\"lastUpdateTime\":\"2024-11-17T11:30:56.224676155Z\",\"details\":\"Integration test failed\",\"startTime\":\"2024-11-17T11:27:22.956469989Z\",\"completionTime\":\"2024-11-17T11:30:56.224676155Z\",\"testPipelineRunName\":\"rhoai-v2-16-enterprise-contract-87lhs\"}]"
+        },
+        "creationTimestamp": "2024-11-17T11:27:22Z",
+        "generateName": "rhoai-v2-16-",
+        "generation": 1,
+        "labels": {
+            "appstudio.openshift.io/application": "rhoai-v2-16",
+            "appstudio.openshift.io/build-pipelinerun": "rhoai-fbc-fragment-v2-16-on-schedule-4b5zx",
+            "appstudio.openshift.io/component": "rhoai-fbc-fragment-v2-16",
+            "pac.test.appstudio.openshift.io/check-run-id": "33099107335",
+            "pac.test.appstudio.openshift.io/event-type": "push",
+            "pac.test.appstudio.openshift.io/original-prname": "rhoai-fbc-fragment-v2-16-on-schedule",
+            "pac.test.appstudio.openshift.io/repository": "odh-operator-bundle-v2-16",
+            "pac.test.appstudio.openshift.io/sha": "7804e7b01ed20f21878b2b2b270a3b23a46547c3",
+            "pac.test.appstudio.openshift.io/state": "completed",
+            "pac.test.appstudio.openshift.io/url-org": "red-hat-data-services",
+            "pac.test.appstudio.openshift.io/url-repository": "RHOAI-Build-Config",
+            "test.appstudio.openshift.io/pipelinerunfinishtime": "1731842839",
+            "test.appstudio.openshift.io/type": "component"
+        },
+        "name": "rhoai-v2-16-vr5qp",
+        "namespace": "rhoai-tenant",
+        "ownerReferences": [
+            {
+                "apiVersion": "appstudio.redhat.com/v1alpha1",
+                "blockOwnerDeletion": true,
+                "controller": true,
+                "kind": "Application",
+                "name": "rhoai-v2-16",
+                "uid": "211661cb-020f-4eff-874e-1bdd6022e103"
+            }
+        ],
+        "resourceVersion": "484939182",
+        "uid": "1aae6103-f1b9-4570-94e6-1227d3f039bf"
+    },
+    "spec": {
+        "application": "rhoai-v2-16",
+        "artifacts": {},
+        "components": [
+            {
+                "containerImage": "quay.io/rhoai/odh-kuberay-operator-controller-rhel8@sha256:b1f3d43f34688e93c972e6a2b961a0ba867a24b56b52310466a3fcfabca8a749",
+                "name": "odh-kuberay-operator-controller-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./ray-operator/",
+                        "dockerfileUrl": "./ray-operator/Dockerfile.konflux",
+                        "revision": "f7c802c14ed707108eaf4aa9ad9a6f64607ad2d5",
+                        "url": "https://github.com/red-hat-data-services/kuberay.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-operator-bundle@sha256:42eeabc67aab219900bdce7820e2245aaf24e8ff8b2605a0a744c9572488abf0",
+                "name": "odh-operator-bundle-v2-16",
+                "source": {
+                    "git": {
+                        "dockerfileUrl": "bundle/Dockerfile",
+                        "revision": "ae7331d87f972b055b12d02f2fe468762cb91ff0",
+                        "url": "https://github.com/red-hat-data-services/RHOAI-Build-Config"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-trustyai-service-rhel8@sha256:da7c9ff6121dd9293ef4e7f31fa9222b383c8cef76a5be35105a83222129e997",
+                "name": "odh-trustyai-service-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "6fc19a4c723eb5feed6d4ec97739173a44d352f8",
+                        "url": "https://github.com/red-hat-data-services/trustyai-explainability.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-data-science-pipelines-operator-controller-rhel8@sha256:eddd0f168ad5456197d027fc906a1d9d54c31a79cb3c9bf9eda3ac38424a91df",
+                "name": "odh-data-science-pipelines-operator-controller-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "96c923bc41a20ac761bdcc19d68f1046473ee6e1",
+                        "url": "https://github.com/red-hat-data-services/data-science-pipelines-operator.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-training-operator-rhel8@sha256:06ff2d030005f7e64d8abd332811e90db3c40870f9b55ee8f6cd6ab58dd935c8",
+                "name": "odh-training-operator-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "build/images/training-operator/Dockerfile.konflux",
+                        "revision": "d1fc4e62a8aab3a2aef5f54e2410931670662cdd",
+                        "url": "https://github.com/red-hat-data-services/training-operator.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-ml-pipelines-launcher-rhel8@sha256:8b0618d01454a7ef5717b34ea4cd909b8e3fb32b705cc951fa236b8f094d2353",
+                "name": "odh-ml-pipelines-launcher-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "backend/Dockerfile.konflux.launcher",
+                        "revision": "41b12b87981ef035114f9f6f65a1e0b02a83d90e",
+                        "url": "https://github.com/red-hat-data-services/data-science-pipelines.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-ml-pipelines-persistenceagent-v2-rhel8@sha256:9e109c770c9715e15bc7cdaad51bcafd45735d6d9d464000e467a21e537cb0e0",
+                "name": "odh-ml-pipelines-persistenceagent-v2-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "backend/Dockerfile.konflux.persistenceagent",
+                        "revision": "41b12b87981ef035114f9f6f65a1e0b02a83d90e",
+                        "url": "https://github.com/red-hat-data-services/data-science-pipelines.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-ml-pipelines-scheduledworkflow-v2-rhel8@sha256:192b15d2535a09ef4183d451f064945825a3948ad8a499b8440f78c8a6f8d47f",
+                "name": "odh-ml-pipelines-scheduledworkflow-v2-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "backend/Dockerfile.konflux.scheduledworkflow",
+                        "revision": "41b12b87981ef035114f9f6f65a1e0b02a83d90e",
+                        "url": "https://github.com/red-hat-data-services/data-science-pipelines.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-modelmesh-serving-controller-rhel8@sha256:242eabed43f23d420be5a5fa218f4a0cd34bb77342943b7748a35a4990c08ca2",
+                "name": "odh-modelmesh-serving-controller-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "d344498e59e408c9f6945f41a294289114e082ee",
+                        "url": "https://github.com/red-hat-data-services/modelmesh-serving.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-modelmesh-rhel8@sha256:f8be2ec57e044ab2c16070b2ef5058ec032f0063ddf566cfb1d902812b33005f",
+                "name": "odh-modelmesh-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "4f27beb6b9976464426450da4f09fe2392c6ddc3",
+                        "url": "https://github.com/red-hat-data-services/modelmesh.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-notebook-controller-rhel8@sha256:32c6d27b8e7f9bcf5fab82554821960a641a907d8e86efcd55f8f2f3afebc43f",
+                "name": "odh-notebook-controller-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./components/",
+                        "dockerfileUrl": "odh-notebook-controller/Dockerfile.konflux",
+                        "revision": "ef96010aa90926493d478139bc2be54342cde0e8",
+                        "url": "https://github.com/red-hat-data-services/kubeflow.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-kueue-controller-rhel8@sha256:2713168aa08a26d16b3ec64833192c33a76a4077e309a353d10b5a7055ed3361",
+                "name": "odh-kueue-controller-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "304de27c4d770d7484aa8e5645842174244483f7",
+                        "url": "https://github.com/red-hat-data-services/kueue.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-kf-notebook-controller-rhel8@sha256:d85a5e4d1fdc10510365489854a13686e5566b7bfe8b230c2b17001a29031fdb",
+                "name": "odh-kf-notebook-controller-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./components/",
+                        "dockerfileUrl": "notebook-controller/Dockerfile.konflux",
+                        "revision": "ef96010aa90926493d478139bc2be54342cde0e8",
+                        "url": "https://github.com/red-hat-data-services/kubeflow.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-model-registry-rhel8@sha256:34d87af5030c8facbaa51339faf22f3c452c3c7a1dc29b80767fbc2c6f323611",
+                "name": "odh-model-registry-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "e3ad6d982589a4aebaf8baf5f240903bec183f58",
+                        "url": "https://github.com/red-hat-data-services/model-registry.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/rhoai-fbc-fragment@sha256:08ebae7b44809a566ff82c2ce7780aa242f36ec7d2a5ac4f443a8a6c1900a0fa",
+                "name": "rhoai-fbc-fragment-v2-16",
+                "source": {
+                    "git": {
+                        "revision": "7804e7b01ed20f21878b2b2b270a3b23a46547c3",
+                        "url": "https://github.com/red-hat-data-services/RHOAI-Build-Config"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-data-science-pipelines-argo-argoexec-rhel8@sha256:358c4d687f3d2d1ab730e88e1a02b83470d8347a05ad17a9665dee141646c784",
+                "name": "odh-data-science-pipelines-argo-argoexec-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "argo-argoexec/Dockerfile.konflux",
+                        "revision": "e5c58fe00bd6ece25287bb0538a5c3253aaea924",
+                        "url": "https://github.com/red-hat-data-services/argo-workflows.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-dashboard-rhel8@sha256:a2f48d22d57393962594ce1d597317d07a11e830267f120edb55f6072541b21e",
+                "name": "odh-dashboard-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "f2a66409fe081ca9f380a694394290d17d8e537f",
+                        "url": "https://github.com/red-hat-data-services/odh-dashboard.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-mm-rest-proxy-rhel8@sha256:ea0545e26226602a2acbf6325e3ab34147190d695530b58f9273e04b25004c5b",
+                "name": "odh-mm-rest-proxy-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "0bd2f06039631ba393e7aaa169fd63008e6aa362",
+                        "url": "https://github.com/red-hat-data-services/rest-proxy.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-model-registry-operator-rhel8@sha256:0bd1e3bd8e82b2c703fc263a73ef8d3bb365594f79030c8da69775b7bc5f7618",
+                "name": "odh-model-registry-operator-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "615f120cc8af0a393f965ddf6e27a82efa8646f5",
+                        "url": "https://github.com/red-hat-data-services/model-registry-operator.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-rhel8-operator@sha256:96a53fffe9731a201be45d002dfce00b48e1980a0b4208893c729a78205646a7",
+                "name": "odh-operator-v2-16",
+                "source": {
+                    "git": {
+                        "dockerfileUrl": "Dockerfiles/Dockerfile.konflux",
+                        "revision": "6cd09492ca228a3be353cf55eb0b9f996baad416",
+                        "url": "https://github.com/red-hat-data-services/rhods-operator"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-codeflare-operator-rhel8@sha256:7127dda7c3a8f73ff1112cf7045bb6834b4145a8695a20edb18d7edab547d9b2",
+                "name": "odh-codeflare-operator-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "99f08417a3fe0da1b4fa003d79b59fb7f431ad36",
+                        "url": "https://github.com/red-hat-data-services/codeflare-operator.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-model-controller-rhel8@sha256:35105d8abe0b9da390643b1ab7e866a40b727d0f446e24b8229446d12656a647",
+                "name": "odh-model-controller-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "e07f2d401259eb642d1ca4668b15435216eb6220",
+                        "url": "https://github.com/red-hat-data-services/odh-model-controller.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-modelmesh-runtime-adapter-rhel8@sha256:e03520937775d4855d980ff2c9a54baec0afc5fec9dc560706f1aad74e884173",
+                "name": "odh-modelmesh-runtime-adapter-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "c569ae24d6c929f1fdfcbbb64b11d6f37521958e",
+                        "url": "https://github.com/red-hat-data-services/modelmesh-runtime-adapter.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-trustyai-service-operator-rhel8@sha256:202ad0dc8ad8cae08241641514577531bb4892a5a02794d9e89579d0fb46caf1",
+                "name": "odh-trustyai-service-operator-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "Dockerfile.konflux",
+                        "revision": "70912b18ab6d006b6e70d33ec2dc1c66e0cf3a81",
+                        "url": "https://github.com/red-hat-data-services/trustyai-service-operator.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-data-science-pipelines-argo-workflowcontroller-rhel8@sha256:7f14bed7766d9fabe3136eeacb97f991a96cded5ae972a9bd17498141df63611",
+                "name": "odh-data-science-pipelines-argo-workflowcontroller-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "argo-workflowcontroller/Dockerfile.konflux",
+                        "revision": "e5c58fe00bd6ece25287bb0538a5c3253aaea924",
+                        "url": "https://github.com/red-hat-data-services/argo-workflows.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-ml-pipelines-driver-rhel8@sha256:4b3cfcbc2e23d44ce867f04f786fdd26f7e538ec8d3c9ae9846a01e5219c4416",
+                "name": "odh-ml-pipelines-driver-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "backend/Dockerfile.konflux.driver",
+                        "revision": "41b12b87981ef035114f9f6f65a1e0b02a83d90e",
+                        "url": "https://github.com/red-hat-data-services/data-science-pipelines.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-mlmd-grpc-server-rhel8@sha256:49b8c59cf436ef70e3402e5650902298a885b2661ed04af7e8b57639f44700d6",
+                "name": "odh-mlmd-grpc-server-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "ml_metadata/tools/docker_server/Dockerfile.konflux",
+                        "revision": "f277c39d21b1709ace0302b6e032a0c91b130ab5",
+                        "url": "https://github.com/red-hat-data-services/ml-metadata.git"
+                    }
+                }
+            },
+            {
+                "containerImage": "quay.io/rhoai/odh-ml-pipelines-api-server-v2-rhel8@sha256:4a94d6bed066034fa1a71c440267ef431a28a11e623bc38e857de9a07830244a",
+                "name": "odh-ml-pipelines-api-server-v2-v2-16",
+                "source": {
+                    "git": {
+                        "context": "./",
+                        "dockerfileUrl": "backend/Dockerfile.konflux.api",
+                        "revision": "41b12b87981ef035114f9f6f65a1e0b02a83d90e",
+                        "url": "https://github.com/red-hat-data-services/data-science-pipelines.git"
+                    }
+                }
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastTransitionTime": "2024-11-17T11:27:22Z",
+                "message": "The Snapshot's component(s) was/were added to the global candidate list",
+                "reason": "Added",
+                "status": "True",
+                "type": "AddedToGlobalCandidateList"
+            },
+            {
+                "lastTransitionTime": "2024-11-17T11:30:56Z",
+                "message": "Snapshot integration status condition is finished since all testing pipelines completed",
+                "reason": "Finished",
+                "status": "True",
+                "type": "AppStudioIntegrationStatus"
+            },
+            {
+                "lastTransitionTime": "2024-11-17T11:30:56Z",
+                "message": "Some Integration pipeline tests failed",
+                "reason": "Failed",
+                "status": "False",
+                "type": "AppStudioTestSucceeded"
+            }
+        ]
+    }
+}
