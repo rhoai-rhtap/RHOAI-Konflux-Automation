@@ -101,6 +101,23 @@ jobs:
 
             # Increment version in filenames, file contents, and handle rhoai branch updates
             for file in ../tekton_copy_$repo_name/*; do
+              # Check if the file contains the version=vX.Y format
+              if grep -q "version=v[0-9]*\.[0-9]*" "$file"; then
+                # Extract the current version
+                current_version=$(grep -o "version=v[0-9]*\.[0-9]*" "$file" | sed 's/version=v//')
+                major_version=$(echo "$current_version" | cut -d. -f1)
+                minor_version=$(echo "$current_version" | cut -d. -f2)
+            
+                # Increment the minor version
+                new_minor_version=$((minor_version + 1))
+                new_version="v${major_version}.${new_minor_version}"
+            
+                # Update the version in the file
+                sed -i "s/version=v${major_version}.${minor_version}/version=${new_version}/g" "$file"
+                echo "Updated version in $file from v${major_version}.${minor_version} to ${new_version}"
+              fi
+            
+              # Update other references to versions
               if [[ "$file" =~ v([0-9]+)-([0-9]+) ]]; then
                 # Extract the current version numbers
                 major_version="${BASH_REMATCH[1]}"
@@ -121,9 +138,6 @@ jobs:
                 sed -i "s/$current_rhoai/$new_rhoai/g" "$new_file_name"
                 echo "Updated version inside $new_file_name from $current_version to $new_version and rhoai reference from $current_rhoai to $new_rhoai"
 
-                # Append pathChanged() condition after the line containing '== "rhoai-x.y"'
-                sed -i '/== "rhoai-[0-9]*\.[0-9]*"/a \      && !"bundle\/manifests\/rhods-operator.clusterserviceversion.yaml".pathChanged()' "$new_file_name"
-                echo "Appended pathChanged() after '== rhoai-x.y' in $new_file_name"
               fi
             done
 
