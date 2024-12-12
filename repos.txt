@@ -1,1 +1,1 @@
-https://github.com/red-hat-data-services/codeflare-operator 
+https://github.com/red-hat-data-services/codeflare-operator.git
