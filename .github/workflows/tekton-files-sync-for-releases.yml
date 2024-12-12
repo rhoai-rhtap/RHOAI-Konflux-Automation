@@ -101,20 +101,22 @@ jobs:
 
             # Increment version in filenames, file contents, and handle rhoai branch updates
             for file in ../tekton_copy_$repo_name/*; do
-              # Check if the file contains the version=vX.Y format
-              if grep -q "version=v[0-9]*\.[0-9]*" "$file"; then
+              # Check if the file contains the version=vX.Y.Z format
+              if grep -q "version=v[0-9]*\.[0-9]*\.[0-9]*" "$file"; then
                 # Extract the current version
-                current_version=$(grep -o "version=v[0-9]*\.[0-9]*" "$file" | sed 's/version=v//')
+                current_version=$(grep -o "version=v[0-9]*\.[0-9]*\.[0-9]*" "$file" | sed 's/version=v//')
                 major_version=$(echo "$current_version" | cut -d. -f1)
                 minor_version=$(echo "$current_version" | cut -d. -f2)
-            
+                
+                patch_version=$(echo "$current_version" | cut -d. -f3)
                 # Increment the minor version
                 new_minor_version=$((minor_version + 1))
-                new_version="v${major_version}.${new_minor_version}"
+                new_patch_version=0
+                new_version="v${major_version}.${new_minor_version}.${new_patch_version}"
             
                 # Update the version in the file
-                sed -i "s/version=v${major_version}.${minor_version}/version=${new_version}/g" "$file"
-                echo "Updated version in $file from v${major_version}.${minor_version} to ${new_version}"
+                sed -i "s/version=v${current_version}/version=${new_version}/g" "$file"
+                echo "Updated version in $file from v${current_version} to ${new_version}"
               fi
             
               # Update other references to versions
