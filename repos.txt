@@ -1,1 +1,1 @@
-https://github.com/rhoai-rhtap/codeflare-operator.git
+https://github.com/red-hat-data-services/codeflare-operator 
