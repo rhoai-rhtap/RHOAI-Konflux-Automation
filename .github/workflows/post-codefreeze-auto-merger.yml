@@ -10,6 +10,9 @@ on:
         description: 'Repository name'
         required: true
         type: string
+      distinct_id:
+        description: 'Distinct ID'
+        required: false
 
 jobs:
   process_pr:
@@ -18,10 +21,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Generate github-app token
+        id: app-token
+        uses: getsentry/action-github-app-token@v2
+        with:
+          app_id: ${{ secrets.RHOAI_DEVOPS_APP_ID }}
+          private_key: ${{ secrets.RHOAI_DEVOPS_APP_PRIVATE_KEY }}
+
       - name: Run Python script with PR ID and repo
         id: process_pr_script
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN_GH }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_TEST }}
         run: |
           output=$(python main.py --pr-id ${{ github.event.inputs.pr_id }} --repo ${{ github.event.inputs.repo }})
