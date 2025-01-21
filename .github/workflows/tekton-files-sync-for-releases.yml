@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           path: automation_repo
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Verify repos.txt existence
         run: |
@@ -37,22 +37,12 @@ jobs:
           ls -al automation_repo
           cat automation_repo/repos.txt || { echo "Error: repos.txt not found"; exit 1; }
 
-
-      - name: Generate github-app token
-        id: app-token
-        uses: getsentry/action-github-app-token@v2
-        with:
-          app_id: ${{ secrets.RHOAI_DEVOPS_APP_ID }}
-          private_key: ${{ secrets.RHOAI_DEVOPS_APP_PRIVATE_KEY }}
-
       - name: Fetch and Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y git
 
       - name: Process Repositories
-        env:
-          GIT_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -e  # Exit immediately if a command exits with a non-zero status
 
@@ -85,14 +75,9 @@ jobs:
             git clone "$repo_url"
             cd "$repo_name" || { echo "Failed to enter directory $repo_name"; exit 1; }
 
-            # Configure Git to use the App token for authentication
-            #git config --global url."https://${GIT_TOKEN}@github.com/".insteadOf "https://github.com/"
-            #git config --global url.https://${GIT_TOKEN}@github.com/.insteadOf https://github.com/
-            git config --global url."https://${GIT_TOKEN}@github.com/".insteadOf "https://github.com/"
+            # Configure Git to use the github token for authentication
+            git config --global url."https://${{ secrets.GH_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
-
-            # Ensure Git doesn't prompt for the password
-            export GIT_ASKPASS="echo $GIT_TOKEN"
 
             # Check out the source branch
             if ! git checkout "$SOURCE_BRANCH"; then
@@ -159,7 +144,7 @@ jobs:
               echo "No changes to commit for branch $TARGET_BRANCH."
             else
               git commit -m "Sync Tekton files from $SOURCE_BRANCH to $TARGET_BRANCH with updated versioning"
-              git push https://x-access-token:${{ steps.app-token.outputs.token }}@${repo_url#https://}
+              git push origin "$TARGET_BRANCH"
               echo "Pushed changes to branch $TARGET_BRANCH in $repo_name."
               
             fi
