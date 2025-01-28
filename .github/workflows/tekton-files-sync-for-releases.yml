@@ -1,4 +1,4 @@
-name: Replicate Tekton Files for Release
+name: Replicate Push Tekton Files for Release
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ permissions:
   actions: write
 
 jobs:
-  copy-tekton-files:
+  copy-push-tekton-files:
     runs-on: ubuntu-latest
 
     steps:
@@ -78,7 +78,6 @@ jobs:
             # Configure Git to use the github token for authentication
             git config --global url."https://${{ secrets.GH_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
-
             # Check out the source branch
             if ! git checkout "$SOURCE_BRANCH"; then
               echo "Error: Source branch $SOURCE_BRANCH does not exist in $repo_name."
@@ -97,32 +96,24 @@ jobs:
               continue
             fi
 
-            # Copy Tekton files to a temporary location
+            # Create a temporary directory to copy only "push" files
             mkdir -p ../tekton_copy_$repo_name
-            cp -r .tekton/* ../tekton_copy_$repo_name/
 
-            # Update version and references in Tekton files
-            for file in ../tekton_copy_$repo_name/*; do
-              # Replace version references (e.g., v2.13 or v2-13) to match the input version (e.g., v2.15.0)
-              sed -i "s/\bv[0-9]\+\.[0-9]\+\.[0-9]\+\b/$VERSION/g" "$file"
-
-              # Replace version references like rhoai-x.y with rhoai-2.15
-              sed -i "s/\brhoai-[0-9]\+\.[0-9]\+\b/rhoai-${major}.${minor}/g" "$file"
-
-              # Replace vx-y references with the target version (e.g., v2-13 -> v2-15)
-              sed -i "s/\bv[0-9]\+-[0-9]\+\b/v${major}-${minor}/g" "$file"
-
-              # Update file names (if needed)
-              file_name=$(basename "$file")
-              new_file_name=$(echo "$file_name" | sed "s/[0-9]\+-[0-9]\+/${major}-${minor}/g" | sed "s/v[0-9]*\.[0-9]*\.[0-9]*/$VERSION/")
-
-              # Only rename the file if the version is different
-              if [[ "$file_name" != "$new_file_name" ]]; then
-                mv "$file" "../tekton_copy_$repo_name/$new_file_name"
-                echo "Renamed file from $file_name to $new_file_name"
+            # Find and copy only "push" files (e.g., files containing "push" in their name)
+            for file in .tekton/*push*.yaml; do
+              if [ -f "$file" ]; then
+                file_name=$(basename "$file")
+                new_file_name=$(echo "$file_name" | sed "s/[0-9]\+-[0-9]\+/${major}-${minor}/g" | sed "s/v[0-9]*\.[0-9]*\.[0-9]*/$VERSION/")
+                if [[ "$file_name" != "$new_file_name" ]]; then
+                  mv "$file" "../tekton_copy_$repo_name/$new_file_name"
+                  echo "Renamed file from $file_name to $new_file_name"
+                else
+                  cp "$file" "../tekton_copy_$repo_name/$file_name"
+                  echo "No renaming needed for $file_name"
+                fi
               fi
             done
-
+            
             # Check out the target branch
             if ! git checkout "$TARGET_BRANCH"; then
               echo "Error: Target branch $TARGET_BRANCH does not exist. Creating it."
@@ -131,9 +122,23 @@ jobs:
 
             echo "Checked out branch $TARGET_BRANCH"
 
-            # Copy updated Tekton files to the target branch
+            # Copy the renamed files to the target branch's .tekton directory
             mkdir -p .tekton
             cp -r ../tekton_copy_$repo_name/* .tekton/
+
+            # Update version and references in the "push" Tekton files
+            for file in .tekton/*push*.yaml; do
+              if [ -f "$file" ]; then
+                # Replace version references (e.g., v2.13 or v2-13) to match the input version (e.g., v2.15.0)
+                sed -i "s/\bv[0-9]\+\.[0-9]\+\.[0-9]\+\b/$VERSION/g" "$file"
+
+                # Replace version references like rhoai-x.y with rhoai-2.15
+                sed -i "s/\brhoai-[0-9]\+\.[0-9]\+\b/rhoai-${major}.${minor}/g" "$file"
+
+                # Replace vx-y references with the target version (e.g., v2-13 -> v2-15)
+                sed -i "s/\bv[0-9]\+-[0-9]\+\b/v${major}-${minor}/g" "$file"
+              fi
+            done
 
             # Add and commit changes
             git add .tekton
@@ -143,10 +148,9 @@ jobs:
             if git diff --staged --quiet; then
               echo "No changes to commit for branch $TARGET_BRANCH."
             else
-              git commit -m "Sync Tekton files from $SOURCE_BRANCH to $TARGET_BRANCH with updated versioning"
+              git commit -m "Sync push Tekton files from $SOURCE_BRANCH to $TARGET_BRANCH with updated versioning"
               git push origin "$TARGET_BRANCH"
               echo "Pushed changes to branch $TARGET_BRANCH in $repo_name."
-              
             fi
 
             # Clean up
