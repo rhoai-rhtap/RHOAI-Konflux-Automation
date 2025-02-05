@@ -1,5 +1,6 @@
 .idea/*
 utils/operator-processor/*.yaml
+utils/operator-processor/*.json
 utils/release-helper/release-*/**
 utils/release-helper/stage-release-*/**
 utils/release-helper/prod-release-*/**
