@@ -10,13 +10,15 @@ import base64
 import sys
 class fbc_processor:
     PRODUCTION_REGISTRY = 'registry.redhat.io'
-    def __init__(self, build_config_path:str, catalog_yaml_path:str, patch_yaml_path:str, single_bundle_path:str, output_file_path:str, push_pipeline_operation:str, push_pipeline_yaml_path:str):
+    def __init__(self, build_config_path:str, catalog_yaml_path:str, previous_catalog_yaml_path:str, patch_yaml_path:str, single_bundle_path:str, output_file_path:str, push_pipeline_operation:str, push_pipeline_yaml_path:str):
         self.build_config_path = build_config_path
         self.catalog_yaml_path = catalog_yaml_path
         self.patch_yaml_path = patch_yaml_path
         self.single_bundle_path = single_bundle_path
         self.output_file_path = output_file_path
         self.catalog_dict:defaultdict = self.parse_catalog_yaml()
+        self.previous_catalog_yaml_path = previous_catalog_yaml_path
+        self.previous_catalog_dict:defaultdict = self.parse_previous_catalog_yaml()
         self.patch_dict = self.parse_patch_yaml()
         self.build_config = yaml.safe_load(open(self.build_config_path))
         self.current_olm_bundle = self.parse_single_bundle_catalog()
@@ -31,6 +33,16 @@ class fbc_processor:
         catalog_dict = defaultdict(dict)
         for obj in objs:
             catalog_dict[obj['schema']][obj['name']] = obj
+        return catalog_dict
+
+    def parse_previous_catalog_yaml(self):
+        catalog_dict = defaultdict()
+        if self.previous_catalog_yaml_path:
+            objs = ruyaml.load_all(open(self.catalog_yaml_path), Loader=ruyaml.RoundTripLoader, preserve_quotes=True)
+            print(type(objs))
+            catalog_dict = defaultdict(dict)
+            for obj in objs:
+                catalog_dict[obj['schema']][obj['name']] = obj
         return catalog_dict
 
     def parse_single_bundle_catalog(self):
@@ -257,6 +269,8 @@ if __name__ == '__main__':
                         help='Path of the build-config.yaml', dest='build_config_path')
     parser.add_argument('-c', '--catalog-yaml-path', required=False,
                         help='Path of the catalog.yaml from the main branch.', dest='catalog_yaml_path')
+    parser.add_argument('-pc', '--previous-catalog-yaml-path', required=False,
+                        help='Path of the catalog.yaml from the previous minor version.', dest='previous_catalog_yaml_path', default='')
     parser.add_argument('-p', '--patch-yaml-path', required=False,
                         help='Path of the catalog-patch.yaml from the release branch.', dest='patch_yaml_path')
     parser.add_argument('-s', '--single-bundle-path', required=False,
@@ -281,7 +295,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.operation.lower() == 'catalog-patch':
-        processor = fbc_processor(build_config_path=args.build_config_path, catalog_yaml_path=args.catalog_yaml_path, patch_yaml_path=args.patch_yaml_path, single_bundle_path=args.single_bundle_path, output_file_path=args.output_file_path, push_pipeline_operation=args.push_pipeline_operation, push_pipeline_yaml_path=args.push_pipeline_yaml_path)
+        processor = fbc_processor(build_config_path=args.build_config_path, catalog_yaml_path=args.catalog_yaml_path, previous_catalog_yaml_path=args.previous_catalog_yaml_path, patch_yaml_path=args.patch_yaml_path, single_bundle_path=args.single_bundle_path, output_file_path=args.output_file_path, push_pipeline_operation=args.push_pipeline_operation, push_pipeline_yaml_path=args.push_pipeline_yaml_path)
         processor.patch_catalog_yaml()
     elif args.operation.lower() == 'extract-snapshot-images':
         processor = snapshot_processor(snapshot_json_path=args.snapshot_json_path, output_file_path=args.output_file_path, image_filter=args.image_filter, rhoai_version=args.rhoai_version, build_config_path=args.build_config_path, catalog_build_args_file_path=args.catalog_build_args_file_path, build_type=args.build_type)
