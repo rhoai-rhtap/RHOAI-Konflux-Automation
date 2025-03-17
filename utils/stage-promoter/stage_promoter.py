@@ -1,6 +1,6 @@
 import os, requests
 import time
-
+import openshift_client as oc
 from jsonupdate_ng import jsonupdate_ng
 import argparse
 import yaml
@@ -94,7 +94,7 @@ class snapshot_processor:
     GIT_COMMIT_LABEL_KEY = 'git.commit'
     FBC_FRAGMENT_REPO = 'rhoai-fbc-fragment'
     QUAY_BASE_URI = 'quay.io/rhoai'
-    def __init__(self, rhoai_version:str, build_config_path:str, timeout:str, output_file_path:str, git_commit:str):
+    def __init__(self, rhoai_version:str, build_config_path:str, timeout:str, output_file_path:str, git_commit:str, pipelineruns:str, pipeline_type:str):
         self.output_file_path = output_file_path
         self.rhoai_version = rhoai_version
         self.build_config_path = build_config_path
@@ -102,6 +102,75 @@ class snapshot_processor:
         self.ocp_versions_for_release = self.build_config['config']['supported-ocp-versions']['release']
         self.timeout = int(timeout) * 60
         self.git_commit = git_commit
+        self.pipelineruns = pipelineruns
+        self.pipeline_type = pipeline_type
+
+    def monitor_fbc_pipelines(self):
+        print('OpenShift client version: {}'.format(oc.get_client_version()))
+        type = self.pipeline_type
+        pipeline_base_url = 'https://konflux.apps.stone-prod-p02.hjvn.p1.openshiftapps.com/application-pipeline/workspaces'
+        workspace = 'rhoai' if type == 'build' else 'rhtap-releng' if type == 'release' else ''
+
+        completed_pipelines = {}
+        failed_pipelines = {}
+        running_statuses = ['Running']
+        success_statuses = ['Succeeded', 'Completed']
+        failed_statuses = ['Failed', 'PipelineRunTimeout', 'PipelineValidationFailed', 'CreateRunFailed']
+        with oc.project('rhoai-tenant'), oc.timeout(180 * 60):
+            for pr in self.pipelineruns:
+                if pr in failed_pipelines:
+                    print(f'FBC stage {type} pipeline {pr} failed with status {failed_pipelines[pr]["status"]}..')
+                elif pr in completed_pipelines:
+                    print(
+                        f'FBC stage {type} pipeline {pr} is successfully completed with status {completed_pipelines[pr]["status"]}..')
+                else:
+                    pr_object = oc.selector(f'pr/{pr}').object()
+                    status = pr_object.model.status.conditions[0].reason
+                    print(pr, status)
+                    if status in running_statuses:
+                        print(f'FBC stage {type} pipeline {pr} is still running..')
+                    elif status in success_statuses:
+                        print(f'FBC stage {type} pipeline {pr} is successfully completed with status {status}..')
+                    elif status in failed_statuses:
+                        print(f'FBC stage {type} pipeline {pr} failed with status {status}..')
+                        failed_pipelines[pr] = {'status': status,
+                                                'message': pr_object.model.status.conditions[0].message,
+                                                'application': pr_object.model.metadata.labels[
+                                                    'appstudio.openshift.io/application']}
+                time.sleep(1 * 60)
+                if len(failed_pipelines) + len(completed_pipelines) == len(self.pipelineruns):
+                    break
+
+            if len(failed_pipelines):
+                print('================ FAILURE SUMMARY ================')
+                for pr, data in failed_pipelines.items():
+                    print(f'****** {pr} ******')
+                    pipeline_url = f'{pipeline_base_url}/{workspace}/applications/{data["application"]}/pipelineruns/{pr}/logs'
+                    print(f'FBC stage {type} pipeline {pr} failed with status {data["status"]}')
+                    print(f'Error: {data["message"]}')
+                    print(f'Please check full logs at {pipeline_url}')
+                    print('\n')
+                print('Exiting..')
+            else:
+                print(f'All the FBC stage {type} pipelines are successfully completed!!')
+                if type == 'build':
+                    qc = quay_controller('rhoai')
+                    fbc_images = {}
+                    for ocp_version in self.ocp_versions_for_release:
+                        fbc_image_tag = f'ocp-{ocp_version.strip("v")}-{self.rhoai_version}-{self.git_commit}'
+                        print(f'getting images for tag - {fbc_image_tag}')
+                        tags = qc.get_all_tags(self.FBC_FRAGMENT_REPO, fbc_image_tag)
+                        for tag in tags:
+                            sig_tag = f'{tag["manifest_digest"].replace(":", "-")}.sig'
+                            signature = qc.get_tag_details(self.FBC_FRAGMENT_REPO, sig_tag)
+                            if signature:
+                                fbc_images[ocp_version] = f'{self.QUAY_BASE_URI}/{self.FBC_FRAGMENT_REPO}@{tag["manifest_digest"]}'
+
+                    json.dump(fbc_images, open(self.output_file_path, 'w'))
+                    slack_message = f':staging: Successfully pushed to stage for {self.rhoai_version}!'
+                    for ocp_version, fbc_image in fbc_images.items():
+                        slack_message += f'\nFBCF image {ocp_version}: {fbc_image}'
+                    open('utils/slack_message.txt', 'w').write(slack_message)
 
     def monitor_fbc_builds(self):
         fbc_images = {}
@@ -197,7 +266,7 @@ def str_presenter(dumper, data):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-op', '--operation', required=False,
-                        help='Operation code, supported values are "stage-catalog-patch" and "monitor-fbc-builds"', dest='operation')
+                        help='Operation code, supported values are "stage-catalog-patch", "monitor-fbc-builds" and "monitor-fbc-pipelines"', dest='operation')
     parser.add_argument('-c', '--catalog-yaml-path', required=False,
                         help='Path of the catalog.yaml from the main branch.', dest='catalog_yaml_path')
     parser.add_argument('-p', '--patch-yaml-path', required=False,
@@ -214,6 +283,8 @@ if __name__ == '__main__':
                         help='Path of the build-config.yaml', dest='build_config_path')
     parser.add_argument('-g', '--git-commit', required=False,
                         help='expected git.commit of the FBC images', dest='git_commit')
+    parser.add_argument('-prs', '--pipelineruns', required=False, default='', dest='pipelineruns')
+    parser.add_argument('-pt', '--pipeline-type', required=False, default='', dest='pipeline_type')
     args = parser.parse_args()
 
     if args.operation.lower() == 'stage-catalog-patch':
@@ -222,6 +293,9 @@ if __name__ == '__main__':
     elif args.operation.lower() == 'monitor-fbc-builds':
         processor = snapshot_processor(rhoai_version=args.rhoai_version, build_config_path=args.build_config_path, timeout=args.timeout, output_file_path=args.output_file_path, git_commit=args.git_commit)
         processor.monitor_fbc_builds()
+    elif args.operation.lower() == 'monitor-fbc-pipelines':
+        processor = snapshot_processor(rhoai_version=args.rhoai_version, build_config_path=args.build_config_path, timeout=args.timeout, output_file_path=args.output_file_path, git_commit=args.git_commit, pipelineruns=args.pipelineruns, pipeline_type=args.pipeline_type)
+        processor.monitor_fbc_pipelines()
 
 
 
