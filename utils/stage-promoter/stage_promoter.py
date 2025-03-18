@@ -142,6 +142,7 @@ class snapshot_processor:
                     break
 
             if len(failed_pipelines):
+                slack_failure_message = f':alert: Following stage {type} pipeline(s) failed, please check the logs:'
                 print('================ FAILURE SUMMARY ================')
                 for pr, data in failed_pipelines.items():
                     print(f'****** {pr} ******')
@@ -150,7 +151,9 @@ class snapshot_processor:
                     print(f'Error: {data["message"]}')
                     print(f'Please check full logs at {pipeline_url}')
                     print('\n')
+                    slack_failure_message += f'<{pipeline_url}|{pr}>: {data["message"]}\n'
                 print('Exiting..')
+                open('utils/slack_failure_message.txt', 'w').write(slack_failure_message)
             else:
                 print(f'All the FBC stage {type} pipelines are successfully completed!!')
                 if type == 'build':
