@@ -115,7 +115,7 @@ class snapshot_processor:
 
         completed_pipelines = {}
         failed_pipelines = {}
-        running_statuses = ['Running']
+        running_statuses = ['Running', 'ResolvingTaskRef']
         success_statuses = ['Succeeded', 'Completed']
         failed_statuses = ['Failed', 'PipelineRunTimeout', 'PipelineValidationFailed', 'CreateRunFailed', 'CouldntGetTask']
         with oc.project(project), oc.timeout(180 * 60):
