@@ -108,15 +108,17 @@ class snapshot_processor:
     def monitor_fbc_pipelines(self):
         print('OpenShift client version: {}'.format(oc.get_client_version()))
         type = self.pipeline_type
-        pipeline_base_url = 'https://konflux.apps.stone-prod-p02.hjvn.p1.openshiftapps.com/application-pipeline/workspaces'
+
+        pipeline_base_url = 'https://konflux-ui.apps.stone-prod-p02.hjvn.p1.openshiftapps.com/ns'
         workspace = 'rhoai' if type == 'build' else 'rhtap-releng' if type == 'release' else ''
+        project = 'rhoai-tenant' if type == 'build' else 'rhtap-releng-tenant' if type == 'release' else ''
 
         completed_pipelines = {}
         failed_pipelines = {}
         running_statuses = ['Running']
         success_statuses = ['Succeeded', 'Completed']
         failed_statuses = ['Failed', 'PipelineRunTimeout', 'PipelineValidationFailed', 'CreateRunFailed', 'CouldntGetTask']
-        with oc.project('rhtap-releng-tenant'), oc.timeout(180 * 60):
+        with oc.project(project), oc.timeout(180 * 60):
 
             while len(failed_pipelines) + len(completed_pipelines) < len(self.pipelineruns):
                 for pr in self.pipelineruns:
@@ -145,8 +147,8 @@ class snapshot_processor:
                 slack_failure_message = f':alert: Following stage {type} pipeline(s) failed, please check the logs:'
                 print('================ FAILURE SUMMARY ================')
                 for pr, data in failed_pipelines.items():
-                    print(f'****** {pr} ******')
-                    pipeline_url = f'{pipeline_base_url}/{workspace}/applications/{data["application"]}/pipelineruns/{pr}/logs'
+                    print(f'****** PipelineRun - {pr} ******')
+                    pipeline_url = f'{pipeline_base_url}/{project}/applications/{data["application"]}/pipelineruns/{pr}/logs'
                     print(f'FBC stage {type} pipeline {pr} failed with status {data["status"]}')
                     print(f'Error: {data["message"]}')
                     print(f'Please check full logs at {pipeline_url}')
