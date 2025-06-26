@@ -102,7 +102,7 @@ class snapshot_processor:
         self.ocp_versions_for_release = self.build_config['config']['supported-ocp-versions']['release']
         self.timeout = int(timeout) * 60
         self.git_commit = git_commit
-        self.pipelineruns = pipelineruns
+        self.pipelineruns = pipelineruns.split(' ')
         self.pipeline_type = pipeline_type
 
     def monitor_fbc_pipelines(self):
@@ -115,8 +115,8 @@ class snapshot_processor:
         failed_pipelines = {}
         running_statuses = ['Running']
         success_statuses = ['Succeeded', 'Completed']
-        failed_statuses = ['Failed', 'PipelineRunTimeout', 'PipelineValidationFailed', 'CreateRunFailed']
-        with oc.project('rhoai-tenant'), oc.timeout(180 * 60):
+        failed_statuses = ['Failed', 'PipelineRunTimeout', 'PipelineValidationFailed', 'CreateRunFailed', 'CouldntGetTask']
+        with oc.project('rhtap-releng-tenant'), oc.timeout(180 * 60):
             for pr in self.pipelineruns:
                 if pr in failed_pipelines:
                     print(f'FBC stage {type} pipeline {pr} failed with status {failed_pipelines[pr]["status"]}..')
