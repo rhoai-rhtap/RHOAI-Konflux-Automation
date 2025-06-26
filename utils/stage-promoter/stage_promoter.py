@@ -117,29 +117,29 @@ class snapshot_processor:
         success_statuses = ['Succeeded', 'Completed']
         failed_statuses = ['Failed', 'PipelineRunTimeout', 'PipelineValidationFailed', 'CreateRunFailed', 'CouldntGetTask']
         with oc.project('rhtap-releng-tenant'), oc.timeout(180 * 60):
-            for pr in self.pipelineruns:
-                if pr in failed_pipelines:
-                    print(f'FBC stage {type} pipeline {pr} failed with status {failed_pipelines[pr]["status"]}..')
-                elif pr in completed_pipelines:
-                    print(
-                        f'FBC stage {type} pipeline {pr} is successfully completed with status {completed_pipelines[pr]["status"]}..')
-                else:
-                    pr_object = oc.selector(f'pr/{pr}').object()
-                    status = pr_object.model.status.conditions[0].reason
-                    print(pr, status)
-                    if status in running_statuses:
-                        print(f'FBC stage {type} pipeline {pr} is still running..')
-                    elif status in success_statuses:
-                        print(f'FBC stage {type} pipeline {pr} is successfully completed with status {status}..')
-                    elif status in failed_statuses:
-                        print(f'FBC stage {type} pipeline {pr} failed with status {status}..')
-                        failed_pipelines[pr] = {'status': status,
-                                                'message': pr_object.model.status.conditions[0].message,
-                                                'application': pr_object.model.metadata.labels[
-                                                    'appstudio.openshift.io/application']}
+
+            while len(failed_pipelines) + len(completed_pipelines) < len(self.pipelineruns):
+                for pr in self.pipelineruns:
+                    if pr in failed_pipelines:
+                        print(f'FBC stage {type} pipeline {pr} failed with status {failed_pipelines[pr]["status"]}..')
+                    elif pr in completed_pipelines:
+                        print(
+                            f'FBC stage {type} pipeline {pr} is successfully completed with status {completed_pipelines[pr]["status"]}..')
+                    else:
+                        pr_object = oc.selector(f'pr/{pr}').object()
+                        status = pr_object.model.status.conditions[0].reason
+                        print(pr, status)
+                        if status in running_statuses:
+                            print(f'FBC stage {type} pipeline {pr} is still running..')
+                        elif status in success_statuses:
+                            print(f'FBC stage {type} pipeline {pr} is successfully completed with status {status}..')
+                        elif status in failed_statuses:
+                            print(f'FBC stage {type} pipeline {pr} failed with status {status}..')
+                            failed_pipelines[pr] = {'status': status,
+                                                    'message': pr_object.model.status.conditions[0].message,
+                                                    'application': pr_object.model.metadata.labels[
+                                                        'appstudio.openshift.io/application']}
                 time.sleep(1 * 60)
-                if len(failed_pipelines) + len(completed_pipelines) == len(self.pipelineruns):
-                    break
 
             if len(failed_pipelines):
                 slack_failure_message = f':alert: Following stage {type} pipeline(s) failed, please check the logs:'
