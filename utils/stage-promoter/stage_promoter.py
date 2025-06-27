@@ -135,6 +135,9 @@ class snapshot_processor:
                             print(f'FBC stage {type} pipeline {pr} is still running..')
                         elif status in success_statuses:
                             print(f'FBC stage {type} pipeline {pr} is successfully completed with status {status}..')
+                            completed_pipelines[pr] = {'status': status,
+                                                    'application': pr_object.model.metadata.labels[
+                                                        'appstudio.openshift.io/application']}
                         elif status in failed_statuses:
                             print(f'FBC stage {type} pipeline {pr} failed with status {status}..')
                             failed_pipelines[pr] = {'status': status,
