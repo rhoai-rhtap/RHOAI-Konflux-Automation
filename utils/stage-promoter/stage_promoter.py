@@ -184,6 +184,7 @@ class snapshot_processor:
         fbc_images = {}
         qc = quay_controller('rhoai')
         time_lapsed = 0
+        delay_sec = 30
         def all_fbc_builds_finished():
             all_versions_covered = True
             for ocp_version in self.ocp_versions_for_release:
@@ -204,9 +205,9 @@ class snapshot_processor:
                     signature = qc.get_tag_details(self.FBC_FRAGMENT_REPO, sig_tag)
                     if signature:
                         fbc_images[ocp_version] = f'{self.QUAY_BASE_URI}/{self.FBC_FRAGMENT_REPO}@{tag["manifest_digest"]}'
-            time.sleep(45)
-            time_lapsed += 60
-            print("time_lapsed - ", str(60), " sec")
+            time.sleep(delay_sec)
+            time_lapsed += delay_sec
+            print("time_lapsed - ", str(delay_sec), " sec")
 
         missing_images = []
         for ocp_version in self.ocp_versions_for_release:
