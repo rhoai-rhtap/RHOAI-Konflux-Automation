@@ -13,8 +13,8 @@ import sys
 
 print('OpenShift client version: {}'.format(oc.get_client_version()))
 
-with oc.project('rhtap-releng-tenant'), oc.timeout(180 * 60):
-    pr = 'managed-zfdwk'
+with oc.project('rhoai-tenant'), oc.timeout(180 * 60):
+    pr = 'rhoai-fbc-fragment-rhoai-223-ocp-416-on-push-wm9j4'
     pr_object = oc.selector(f'pr/{pr}').object()
     status = pr_object.model.status.conditions[0].reason
     print(status)

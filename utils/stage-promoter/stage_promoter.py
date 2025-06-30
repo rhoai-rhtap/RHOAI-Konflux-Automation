@@ -7,6 +7,8 @@ import yaml
 import ruamel.yaml as ruyaml
 import json
 from collections import defaultdict
+from openshift_client.model import OpenShiftPythonException
+
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 import base64
 import sys
@@ -115,9 +117,13 @@ class snapshot_processor:
 
         completed_pipelines = {}
         failed_pipelines = {}
+        unknown_pipelines = {}
+
         running_statuses = ['Running', 'ResolvingTaskRef']
         success_statuses = ['Succeeded', 'Completed']
         failed_statuses = ['Failed', 'PipelineRunTimeout', 'PipelineValidationFailed', 'CreateRunFailed', 'CouldntGetTask', 'ReasonCouldntCreateOrUpdateAffinityAssistantStatefulSet']
+        unknown_status = ['Unknown']
+
         with oc.project(project), oc.timeout(180 * 60):
 
             while len(failed_pipelines) + len(completed_pipelines) < len(self.pipelineruns):
@@ -128,8 +134,12 @@ class snapshot_processor:
                         print(
                             f'FBC stage {type} pipeline {pr} is successfully completed with status {completed_pipelines[pr]["status"]}..')
                     else:
-                        pr_object = oc.selector(f'pr/{pr}').object()
-                        status = pr_object.model.status.conditions[0].reason
+                        try:
+                            pr_object = oc.selector(f'pr/{pr}').object()
+                            status = pr_object.model.status.conditions[0].reason
+                        except OpenShiftPythonException as e:
+                            print(e)
+
                         print(pr, status)
                         if status in running_statuses:
                             print(f'FBC stage {type} pipeline {pr} is still running..')
