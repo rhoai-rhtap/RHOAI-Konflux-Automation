@@ -117,7 +117,7 @@ class snapshot_processor:
         failed_pipelines = {}
         running_statuses = ['Running', 'ResolvingTaskRef']
         success_statuses = ['Succeeded', 'Completed']
-        failed_statuses = ['Failed', 'PipelineRunTimeout', 'PipelineValidationFailed', 'CreateRunFailed', 'CouldntGetTask']
+        failed_statuses = ['Failed', 'PipelineRunTimeout', 'PipelineValidationFailed', 'CreateRunFailed', 'CouldntGetTask', 'ReasonCouldntCreateOrUpdateAffinityAssistantStatefulSet']
         with oc.project(project), oc.timeout(180 * 60):
 
             while len(failed_pipelines) + len(completed_pipelines) < len(self.pipelineruns):
@@ -138,7 +138,8 @@ class snapshot_processor:
                             completed_pipelines[pr] = {'status': status,
                                                     'application': pr_object.model.metadata.labels[
                                                         'appstudio.openshift.io/application']}
-                        elif status in failed_statuses:
+                        #elif status in failed_statuses:
+                        else:
                             print(f'FBC stage {type} pipeline {pr} failed with status {status}..')
                             failed_pipelines[pr] = {'status': status,
                                                     'message': pr_object.model.status.conditions[0].message,
