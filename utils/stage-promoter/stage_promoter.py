@@ -145,7 +145,7 @@ class snapshot_processor:
                                                     'message': pr_object.model.status.conditions[0].message,
                                                     'application': pr_object.model.metadata.labels[
                                                         'appstudio.openshift.io/application']}
-                time.sleep(1 * 60)
+                time.sleep(1 * 15)
 
             if len(failed_pipelines):
                 slack_failure_message = f':alert: Following stage {type} pipeline(s) failed, please check the logs:'
