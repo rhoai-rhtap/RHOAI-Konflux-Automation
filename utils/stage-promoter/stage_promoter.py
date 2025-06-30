@@ -138,6 +138,7 @@ class snapshot_processor:
                             pr_object = oc.selector(f'pr/{pr}').object()
                             status = pr_object.model.status.conditions[0].reason
                         except OpenShiftPythonException as e:
+                            status = 'Unknown'
                             print(e)
 
                         print(pr, status)
