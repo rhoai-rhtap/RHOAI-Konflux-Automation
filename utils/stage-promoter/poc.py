@@ -11,13 +11,16 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 import base64
 import sys
 
-print('OpenShift client version: {}'.format(oc.get_client_version()))
+# print('OpenShift client version: {}'.format(oc.get_client_version()))
+#
+# with oc.project('rhoai-tenant'), oc.timeout(180 * 60):
+#     pr = 'rhoai-fbc-fragment-rhoai-223-ocp-416-on-push-wm9j4'
+#     pr_object = oc.selector(f'pr/{pr}').object()
+#     status = pr_object.model.status.conditions[0].reason
+#     print(status)
 
-with oc.project('rhoai-tenant'), oc.timeout(180 * 60):
-    pr = 'rhoai-fbc-fragment-rhoai-223-ocp-416-on-push-wm9j4'
-    pr_object = oc.selector(f'pr/{pr}').object()
-    status = pr_object.model.status.conditions[0].reason
-    print(status)
 
-
+failed_pipelines = {'a': 1, 'b': 2, 'c': 3}
+failed_pipelines_info_path='something.txt'
+yaml.safe_dump({'failed_pipelines': list(failed_pipelines.keys())}, open(failed_pipelines_info_path, 'w'))
 

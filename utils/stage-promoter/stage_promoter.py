@@ -96,7 +96,7 @@ class snapshot_processor:
     GIT_COMMIT_LABEL_KEY = 'git.commit'
     FBC_FRAGMENT_REPO = 'rhoai-fbc-fragment'
     QUAY_BASE_URI = 'quay.io/rhoai'
-    def __init__(self, rhoai_version:str, build_config_path:str, timeout:str, output_file_path:str, git_commit:str, pipelineruns:str, pipeline_type:str):
+    def __init__(self, rhoai_version:str, build_config_path:str, timeout:str, output_file_path:str, git_commit:str, pipelineruns:str, pipeline_type:str, failed_pipelines_info_path:str):
         self.output_file_path = output_file_path
         self.rhoai_version = rhoai_version
         self.build_config_path = build_config_path
@@ -106,6 +106,9 @@ class snapshot_processor:
         self.git_commit = git_commit
         self.pipelineruns = pipelineruns.split(' ')
         self.pipeline_type = pipeline_type
+        self.failed_pipelines_info_path = failed_pipelines_info_path
+        if os.path.exists(self.failed_pipelines_info_path):
+            os.remove(self.failed_pipelines_info_path)
 
     def monitor_fbc_pipelines(self):
         print('OpenShift client version: {}'.format(oc.get_client_version()))
@@ -121,7 +124,7 @@ class snapshot_processor:
 
         running_statuses = ['Running', 'ResolvingTaskRef']
         success_statuses = ['Succeeded', 'Completed']
-        failed_statuses = ['Failed', 'PipelineRunTimeout', 'PipelineValidationFailed', 'CreateRunFailed', 'CouldntGetTask', 'ReasonCouldntCreateOrUpdateAffinityAssistantStatefulSet']
+        failed_statuses = ['Failed', 'PipelineRunTimeout', 'PipelineValidationFailed', 'CreateRunFailed', 'CouldntGetTask', 'ReasonCouldntCreateOrUpdateAffinityAssistantStatefulSet', 'CancelledRunningFinally']
         unknown_status = ['Unknown']
 
         with oc.project(project), oc.timeout(180 * 60):
@@ -159,6 +162,7 @@ class snapshot_processor:
                 time.sleep(1 * 15)
 
             if len(failed_pipelines):
+                yaml.safe_dump({'failed_pipelines': list(failed_pipelines.keys())}, open(self.failed_pipelines_info_path, 'w'))
                 slack_failure_message = f':alert: Following stage {type} pipeline(s) failed, please check the logs:'
                 print('================ FAILURE SUMMARY ================')
                 for pr, data in failed_pipelines.items():
@@ -306,6 +310,7 @@ if __name__ == '__main__':
                         help='expected git.commit of the FBC images', dest='git_commit')
     parser.add_argument('-prs', '--pipelineruns', required=False, default='', dest='pipelineruns')
     parser.add_argument('-pt', '--pipeline-type', required=False, default='', dest='pipeline_type')
+    parser.add_argument('-fp', '--failed-pipelines-info-path', required=False, default='', dest='failed_pipelines_info_path')
     args = parser.parse_args()
 
     if args.operation.lower() == 'stage-catalog-patch':
@@ -315,7 +320,7 @@ if __name__ == '__main__':
         processor = snapshot_processor(rhoai_version=args.rhoai_version, build_config_path=args.build_config_path, timeout=args.timeout, output_file_path=args.output_file_path, git_commit=args.git_commit)
         processor.monitor_fbc_builds()
     elif args.operation.lower() == 'monitor-fbc-pipelines':
-        processor = snapshot_processor(rhoai_version=args.rhoai_version, build_config_path=args.build_config_path, timeout=args.timeout, output_file_path=args.output_file_path, git_commit=args.git_commit, pipelineruns=args.pipelineruns, pipeline_type=args.pipeline_type)
+        processor = snapshot_processor(rhoai_version=args.rhoai_version, build_config_path=args.build_config_path, timeout=args.timeout, output_file_path=args.output_file_path, git_commit=args.git_commit, pipelineruns=args.pipelineruns, pipeline_type=args.pipeline_type, failed_pipelines_info_path=args.failed_pipelines_info_path)
         processor.monitor_fbc_pipelines()
 
 
