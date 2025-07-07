@@ -159,7 +159,7 @@ class snapshot_processor:
                                                     'message': pr_object.model.status.conditions[0].message,
                                                     'application': pr_object.model.metadata.labels[
                                                         'appstudio.openshift.io/application']}
-                time.sleep(1 * 1)
+                time.sleep(1 * 15)
 
             if len(failed_pipelines):
                 yaml.safe_dump({'failed_pipelines': list(failed_pipelines.keys())}, open(self.failed_pipelines_info_path, 'w'))
