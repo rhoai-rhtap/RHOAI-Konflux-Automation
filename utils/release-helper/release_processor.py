@@ -110,7 +110,7 @@ class release_processor:
                 git_url = labels[self.GIT_URL_LABEL_KEY]
                 git_commit = labels[self.GIT_COMMIT_LABEL_KEY]
                 snapshot_component['name'] = self.konflux_components[repo_path]
-                snapshot_component['containerImage'] = image
+                snapshot_component['containerImage'] = f'{image}123'
                 snapshot_component['source'] = {'git': {}}
                 snapshot_component['source']['git']['url'] = git_url
                 snapshot_component['source']['git']['revision'] = git_commit
