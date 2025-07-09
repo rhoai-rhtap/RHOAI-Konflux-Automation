@@ -109,6 +109,9 @@ class snapshot_processor:
         self.failed_pipelines_info_path = failed_pipelines_info_path
         if os.path.exists(self.failed_pipelines_info_path):
             os.remove(self.failed_pipelines_info_path)
+        self.slack_failure_message_path = 'utils/slack_failure_message.txt'
+        if os.path.exists(self.slack_failure_message_path):
+            os.remove(self.slack_failure_message_path)
 
     def monitor_fbc_pipelines(self):
         print('OpenShift client version: {}'.format(oc.get_client_version()))
@@ -173,8 +176,7 @@ class snapshot_processor:
                     print(f'Please check full logs at {pipeline_url}')
                     print('\n')
                     slack_failure_message += f'<{pipeline_url}|{pr}>: {data["message"]}\n'
-                print('Exiting..')
-                open('utils/slack_failure_message.txt', 'w').write(slack_failure_message)
+                open(self.slack_failure_message_path, 'w').write(slack_failure_message)
             else:
                 print(f'All the FBC stage {type} pipelines are successfully completed!!')
                 if type == 'build':
@@ -281,6 +283,43 @@ class quay_controller:
             print(response.json())
             sys.exit(1)
 
+class prereqs_checker:
+    def __init__(self, conforma_results_file_path:str, smokes_results_file_path:str):
+        self.conforma_results_file_path = conforma_results_file_path
+        self.conforma_results = yaml.safe_load(open(self.conforma_results_file_path))
+
+        self.smokes_results_file_path = smokes_results_file_path
+        self.smokes_results = yaml.safe_load(open(self.smokes_results_file_path))
+
+        self.smokes_tolerance_percentage = 25
+
+
+    def check_prerequisites_status(self):
+        conforma_green = self.check_conforma_status()
+        smokes_green = self.check_smokes_status()
+
+        if not conforma_green:
+            print('Skipping the stage-push since conforma tests are failing, please fix asap to make the next run green!')
+        if not smokes_green:
+            print(
+                f'Skipping the stage-push since more than {self.smokes_tolerance_percentage}% of the smoke tests are failing, please fix asap to make the next run green!')
+        if not conforma_green or not smokes_green:
+            sys.exit(1)
+
+    def check_conforma_status(self):
+        component_errors = int(self.conforma_results['summary']['component_violations'])
+        fbc_errors = int(self.conforma_results['summary']['fbc_violations'])
+        return component_errors > 0 or fbc_errors > 0
+
+
+    def check_smokes_status(self):
+        total_tests = int(self.smokes_results['test_summary']['Total'])
+        failed_tests = int(self.smokes_results['test_summary']['Failed'])
+        return failed_tests > total_tests * (self.smokes_tolerance_percentage/100)
+
+
+
+
 def str_presenter(dumper, data):
     if data.count('\n') > 0:
         return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
@@ -291,7 +330,7 @@ def str_presenter(dumper, data):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-op', '--operation', required=False,
-                        help='Operation code, supported values are "stage-catalog-patch", "monitor-fbc-builds" and "monitor-fbc-pipelines"', dest='operation')
+                        help='Operation code, supported values are "stage-catalog-patch", "monitor-fbc-builds", "monitor-fbc-pipelines" and "check-prerequisite-status"', dest='operation')
     parser.add_argument('-c', '--catalog-yaml-path', required=False,
                         help='Path of the catalog.yaml from the main branch.', dest='catalog_yaml_path')
     parser.add_argument('-p', '--patch-yaml-path', required=False,
@@ -311,6 +350,8 @@ if __name__ == '__main__':
     parser.add_argument('-prs', '--pipelineruns', required=False, default='', dest='pipelineruns')
     parser.add_argument('-pt', '--pipeline-type', required=False, default='', dest='pipeline_type')
     parser.add_argument('-fp', '--failed-pipelines-info-path', required=False, default='', dest='failed_pipelines_info_path')
+    parser.add_argument('-cfr', '--conforma-results-file-path', required=False, default='', dest='conforma_results_file_path')
+    parser.add_argument('-smr', '--smokes-results-file-path', required=False, default='', dest='smokes_results_file_path')
     args = parser.parse_args()
 
     if args.operation.lower() == 'stage-catalog-patch':
@@ -322,6 +363,8 @@ if __name__ == '__main__':
     elif args.operation.lower() == 'monitor-fbc-pipelines':
         processor = snapshot_processor(rhoai_version=args.rhoai_version, build_config_path=args.build_config_path, timeout=args.timeout, output_file_path=args.output_file_path, git_commit=args.git_commit, pipelineruns=args.pipelineruns, pipeline_type=args.pipeline_type, failed_pipelines_info_path=args.failed_pipelines_info_path)
         processor.monitor_fbc_pipelines()
+    elif args.operation.lower() == 'check-prerequisite-status':
+        checker = prereqs_checker(conforma_results_file_path=args.conforma_results_file_path, smokes_results_file_path=args.smokes_results_file_path)
 
 
 
