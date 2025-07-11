@@ -167,7 +167,7 @@ class snapshot_processor:
             if len(failed_pipelines):
                 yaml.safe_dump({'failed_pipelines': list(failed_pipelines.keys())}, open(self.failed_pipelines_info_path, 'w'))
                 slack_failure_message = f':alert: Following stage {type} pipeline(s) failed, please check the logs:'
-                print('================ FAILURE SUMMARY ================')
+                print('\n================ FAILURE SUMMARY ================')
                 for pr, data in failed_pipelines.items():
                     print(f'****** PipelineRun - {pr} ******')
                     pipeline_url = f'{pipeline_base_url}/{project}/applications/{data["application"]}/pipelineruns/{pr}/logs'
@@ -175,7 +175,7 @@ class snapshot_processor:
                     print(f'Error: {data["message"]}')
                     print(f'Please check full logs at {pipeline_url}')
                     print('\n')
-                    slack_failure_message += f'<{pipeline_url}|{pr}>: {data["message"]}\n'
+                    slack_failure_message += f'\n<{pipeline_url}|{pr}>: {data["message"]}'
                 open(self.slack_failure_message_path, 'w').write(slack_failure_message)
             else:
                 print(f'All the FBC stage {type} pipelines are successfully completed!!')
@@ -284,7 +284,10 @@ class quay_controller:
             sys.exit(1)
 
 class prereqs_checker:
-    def __init__(self, conforma_results_file_path:str, smokes_results_file_path:str):
+    def __init__(self, rhoai_version:str, build_type:str, conforma_results_file_path:str, smokes_results_file_path:str):
+        self.rhoai_version = rhoai_version
+        self.build_type = build_type
+
         self.conforma_results_file_path = conforma_results_file_path
         self.conforma_results = yaml.safe_load(open(self.conforma_results_file_path))
 
@@ -297,6 +300,7 @@ class prereqs_checker:
     def check_prerequisites_status(self):
         conforma_green = self.check_conforma_status()
         smokes_green = self.check_smokes_status()
+        slack_failure_message = f':alert: Prerequisites check failed during {self.build_type} stage push for *{self.rhoai_version}*'
 
         if not conforma_green:
             print('Skipping the stage-push since conforma tests are failing, please fix asap to make the next run green!')
@@ -304,6 +308,10 @@ class prereqs_checker:
             print(
                 f'Skipping the stage-push since more than {self.smokes_tolerance_percentage}% of the smoke tests are failing, please fix asap to make the next run green!')
         if not conforma_green or not smokes_green:
+
+            print('================ FAILURE SUMMARY ================')
+            # slack_failure_message += f'\n<{pipeline_url}|{pr}>: {data["message"]}'
+            open(self.slack_failure_message_path, 'w').write(slack_failure_message)
             sys.exit(1)
         else:
             print('All prerequisite checks are successful, moving ahead with the stage push.. ')
@@ -358,6 +366,7 @@ if __name__ == '__main__':
     parser.add_argument('-fp', '--failed-pipelines-info-path', required=False, default='', dest='failed_pipelines_info_path')
     parser.add_argument('-cfr', '--conforma-results-file-path', required=False, default='', dest='conforma_results_file_path')
     parser.add_argument('-smr', '--smokes-results-file-path', required=False, default='', dest='smokes_results_file_path')
+    parser.add_argument('-bt', '--build-type', required=False, default='nightly', dest='build_type')
     args = parser.parse_args()
 
     if args.operation.lower() == 'stage-catalog-patch':
@@ -370,7 +379,7 @@ if __name__ == '__main__':
         processor = snapshot_processor(rhoai_version=args.rhoai_version, build_config_path=args.build_config_path, timeout=args.timeout, output_file_path=args.output_file_path, git_commit=args.git_commit, pipelineruns=args.pipelineruns, pipeline_type=args.pipeline_type, failed_pipelines_info_path=args.failed_pipelines_info_path)
         processor.monitor_fbc_pipelines()
     elif args.operation.lower() == 'check-prerequisite-status':
-        checker = prereqs_checker(conforma_results_file_path=args.conforma_results_file_path, smokes_results_file_path=args.smokes_results_file_path)
+        checker = prereqs_checker(rhoai_version=args.rhoai_version, build_type=args.build_type, conforma_results_file_path=args.conforma_results_file_path, smokes_results_file_path=args.smokes_results_file_path)
         checker.check_prerequisites_status()
 
 
