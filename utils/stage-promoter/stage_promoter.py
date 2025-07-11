@@ -371,6 +371,7 @@ if __name__ == '__main__':
         processor.monitor_fbc_pipelines()
     elif args.operation.lower() == 'check-prerequisite-status':
         checker = prereqs_checker(conforma_results_file_path=args.conforma_results_file_path, smokes_results_file_path=args.smokes_results_file_path)
+        checker.check_prerequisites_status()
 
 
 
