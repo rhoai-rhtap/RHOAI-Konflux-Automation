@@ -313,7 +313,7 @@ class prereqs_checker:
         component_errors = int(self.conforma_results['summary']['component_violations'])
         fbc_errors = int(self.conforma_results['summary']['fbc_violations'])
         print(f'Found {component_errors} conforma violations for components and {fbc_errors} conforma violations for FBC fragment')
-        return component_errors > 0 or fbc_errors > 0
+        return component_errors == 0 and fbc_errors == 0
 
 
     def check_smokes_status(self):
@@ -321,7 +321,7 @@ class prereqs_checker:
         total_tests = int(self.smokes_results['test_summary']['Total'])
         failed_tests = int(self.smokes_results['test_summary']['Failed'])
         print(f'Found {failed_tests} test failures out of total {total_tests} tests executed')
-        return failed_tests > total_tests * (self.smokes_tolerance_percentage/100)
+        return failed_tests <= total_tests * (self.smokes_tolerance_percentage/100)
 
 
 
