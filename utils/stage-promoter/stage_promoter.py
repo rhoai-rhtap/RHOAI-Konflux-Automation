@@ -175,7 +175,7 @@ class snapshot_processor:
                     print(f'Error: {data["message"]}')
                     print(f'Please check full logs at {pipeline_url}')
                     print('\n')
-                    slack_failure_message += f'\n<{pipeline_url}|{pr}>: {data["message"]}'
+                    slack_failure_message += f'\n* <{pipeline_url}|{pr}>: {data["message"]}'
                 open(self.slack_failure_message_path, 'w').write(slack_failure_message)
             else:
                 print(f'All the FBC stage {type} pipelines are successfully completed!!')
@@ -193,7 +193,7 @@ class snapshot_processor:
                             if signature:
                                 fbc_image = f'{self.QUAY_BASE_URI}/{self.FBC_FRAGMENT_REPO}@{tag["manifest_digest"]}'
                                 fbc_images[ocp_version] = fbc_image
-                                slack_message += f'\nFBCF image {ocp_version}: {fbc_image}'
+                                slack_message += f'\n* FBCF image {ocp_version}: {fbc_image}'
 
                     json.dump(fbc_images, open(self.output_file_path, 'w'))
                     open('utils/slack_message.txt', 'w').write(slack_message)
