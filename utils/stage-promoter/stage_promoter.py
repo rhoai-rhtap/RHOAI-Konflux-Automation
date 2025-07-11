@@ -166,7 +166,7 @@ class snapshot_processor:
 
             if len(failed_pipelines):
                 yaml.safe_dump({'failed_pipelines': list(failed_pipelines.keys())}, open(self.failed_pipelines_info_path, 'w'))
-                slack_failure_message = f':alert: Following stage {type} pipeline(s) failed, please check the logs:'
+                slack_failure_message = f':alert: Following stage {type} pipeline(s) failed for {self.rhoai_version}, please check the logs:'
                 print('\n================ FAILURE SUMMARY ================')
                 for pr, data in failed_pipelines.items():
                     print(f'****** PipelineRun - {pr} ******')
