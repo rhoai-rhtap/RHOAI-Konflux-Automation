@@ -298,7 +298,7 @@ class prereqs_checker:
         self.smokes_results = yaml.safe_load(open(self.smokes_results_file_path))
 
         self.smokes_tolerance_percentage = 25
-        self.slack_failure_message = f':alert: *{self.build_type} stage push failed for {self.rhoai_version}* due to unsuccessful prerequisites check:'
+        self.slack_failure_message = f':alert: {self.build_type} stage push failed for *{self.rhoai_version}* due to unsuccessful prerequisites check:'
         self.cfr_repo_url = f'https://github.com/red-hat-data-services/conforma-reporter/tree/{self.rhoai_version}'
 
     def check_prerequisites_status(self):
