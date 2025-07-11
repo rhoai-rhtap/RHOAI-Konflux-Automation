@@ -287,6 +287,9 @@ class prereqs_checker:
     def __init__(self, rhoai_version:str, build_type:str, conforma_results_file_path:str, smokes_results_file_path:str):
         self.rhoai_version = rhoai_version
         self.build_type = build_type
+        self.slack_failure_message_path = 'utils/slack_failure_message.txt'
+        if os.path.exists(self.slack_failure_message_path):
+            os.remove(self.slack_failure_message_path)
 
         self.conforma_results_file_path = conforma_results_file_path
         self.conforma_results = yaml.safe_load(open(self.conforma_results_file_path))
@@ -295,23 +298,15 @@ class prereqs_checker:
         self.smokes_results = yaml.safe_load(open(self.smokes_results_file_path))
 
         self.smokes_tolerance_percentage = 25
-
+        self.slack_failure_message = f':alert: Prerequisites check failed during {self.build_type} stage push for *{self.rhoai_version}*'
+        self.cfr_repo_url = f'https://github.com/red-hat-data-services/conforma-reporter/tree/{self.rhoai_version}'
 
     def check_prerequisites_status(self):
         conforma_green = self.check_conforma_status()
         smokes_green = self.check_smokes_status()
-        slack_failure_message = f':alert: Prerequisites check failed during {self.build_type} stage push for *{self.rhoai_version}*'
 
-        if not conforma_green:
-            print('Skipping the stage-push since conforma tests are failing, please fix asap to make the next run green!')
-        if not smokes_green:
-            print(
-                f'Skipping the stage-push since more than {self.smokes_tolerance_percentage}% of the smoke tests are failing, please fix asap to make the next run green!')
         if not conforma_green or not smokes_green:
-
-            print('================ FAILURE SUMMARY ================')
-            # slack_failure_message += f'\n<{pipeline_url}|{pr}>: {data["message"]}'
-            open(self.slack_failure_message_path, 'w').write(slack_failure_message)
+            open(self.slack_failure_message_path, 'w').write(self.slack_failure_message)
             sys.exit(1)
         else:
             print('All prerequisite checks are successful, moving ahead with the stage push.. ')
@@ -321,7 +316,15 @@ class prereqs_checker:
         component_errors = int(self.conforma_results['summary']['component_violations'])
         fbc_errors = int(self.conforma_results['summary']['fbc_violations'])
         print(f'Found {component_errors} conforma violations for components and {fbc_errors} conforma violations for FBC fragment')
-        return component_errors == 0 and fbc_errors == 0
+        if component_errors > 0:
+            self.slack_failure_message += f'\n* Conforma validation failed for *components*, check more details at <{self.cfr_repo_url}/components-violations.md|Components-Conforma-Violations>'
+            print(f'Conforma validation failed for components, check more details at {self.cfr_repo_url}/components-violations.md')
+        if fbc_errors > 0:
+            self.slack_failure_message += f'\n* Conforma validation failed for *FBC*, check more details at <{self.cfr_repo_url}/fbc-violations.md|FBC-Conforma-Violations>'
+            print(f'Conforma validation failed for FBC, check more details at {self.cfr_repo_url}/fbc-violations.md')
+
+        success = component_errors == 0 and fbc_errors == 0
+        return success
 
 
     def check_smokes_status(self):
@@ -329,7 +332,12 @@ class prereqs_checker:
         total_tests = int(self.smokes_results['test_summary']['Total'])
         failed_tests = int(self.smokes_results['test_summary']['Failed'])
         print(f'Found {failed_tests} test failures out of total {total_tests} tests executed')
-        return failed_tests <= total_tests * (self.smokes_tolerance_percentage/100)
+        success = failed_tests <= total_tests * (self.smokes_tolerance_percentage/100)
+
+        if not success:
+            self.slack_failure_message += f'\n* More than {self.smokes_tolerance_percentage}% smoke tests failed, check more details at <{self.cfr_repo_url}/smoke_test_report.html|Smoke-Test-Report>'
+            print(f'More than {self.smokes_tolerance_percentage}% smoke tests failed, check more details at {self.cfr_repo_url}/smoke_test_report.html')
+        return success
 
 
 
