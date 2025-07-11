@@ -305,16 +305,22 @@ class prereqs_checker:
                 f'Skipping the stage-push since more than {self.smokes_tolerance_percentage}% of the smoke tests are failing, please fix asap to make the next run green!')
         if not conforma_green or not smokes_green:
             sys.exit(1)
+        else:
+            print('All prerequisite checks are successful, moving ahead with the stage push.. ')
 
     def check_conforma_status(self):
+        print('Checking conforma results..')
         component_errors = int(self.conforma_results['summary']['component_violations'])
         fbc_errors = int(self.conforma_results['summary']['fbc_violations'])
+        print(f'Found {component_errors} conforma violations for components and {fbc_errors} conforma violations for FBC fragment')
         return component_errors > 0 or fbc_errors > 0
 
 
     def check_smokes_status(self):
+        print('Checking smoke results..')
         total_tests = int(self.smokes_results['test_summary']['Total'])
         failed_tests = int(self.smokes_results['test_summary']['Failed'])
+        print(f'Found {failed_tests} test failures out of total {total_tests} tests executed')
         return failed_tests > total_tests * (self.smokes_tolerance_percentage/100)
 
 
