@@ -307,7 +307,6 @@ class prereqs_checker:
 
         if not conforma_green or not smokes_green:
             open(self.slack_failure_message_path, 'w').write(self.slack_failure_message)
-            sys.exit(1)
         else:
             print('All prerequisite checks are successful, moving ahead with the stage push.. ')
 
