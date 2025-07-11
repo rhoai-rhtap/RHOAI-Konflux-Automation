@@ -193,7 +193,7 @@ class snapshot_processor:
                             if signature:
                                 fbc_image = f'{self.QUAY_BASE_URI}/{self.FBC_FRAGMENT_REPO}@{tag["manifest_digest"]}'
                                 fbc_images[ocp_version] = fbc_image
-                                slack_message += f'\n* FBCF image {ocp_version}: {fbc_image}'
+                                slack_message += f'\n• FBCF image {ocp_version}: {fbc_image}'
 
                     json.dump(fbc_images, open(self.output_file_path, 'w'))
                     open('utils/slack_message.txt', 'w').write(slack_message)
@@ -316,10 +316,10 @@ class prereqs_checker:
         fbc_errors = int(self.conforma_results['summary']['fbc_violations'])
         print(f'Found {component_errors} conforma violations for components and {fbc_errors} conforma violations for FBC fragment')
         if component_errors > 0:
-            self.slack_failure_message += f'\n* Conforma validation failed for *components*, check more details at <{self.cfr_repo_url}/components-violations.md|Components-Conforma-Violations>'
+            self.slack_failure_message += f'\n• Conforma validation failed for *components*, check more details at <{self.cfr_repo_url}/components-violations.md|Components-Conforma-Violations>'
             print(f'Conforma validation failed for components, check more details at {self.cfr_repo_url}/components-violations.md')
         if fbc_errors > 0:
-            self.slack_failure_message += f'\n* Conforma validation failed for *FBC*, check more details at <{self.cfr_repo_url}/fbc-violations.md|FBC-Conforma-Violations>'
+            self.slack_failure_message += f'\n• Conforma validation failed for *FBC*, check more details at <{self.cfr_repo_url}/fbc-violations.md|FBC-Conforma-Violations>'
             print(f'Conforma validation failed for FBC, check more details at {self.cfr_repo_url}/fbc-violations.md')
 
         success = component_errors == 0 and fbc_errors == 0
@@ -334,7 +334,7 @@ class prereqs_checker:
         success = failed_tests <= total_tests * (self.smokes_tolerance_percentage/100)
 
         if not success:
-            self.slack_failure_message += f'\n* More than {self.smokes_tolerance_percentage}% smoke tests failed, check more details at <{self.cfr_repo_url}/smoke_test_report.html|Smoke-Test-Report>'
+            self.slack_failure_message += f'\n• More than {self.smokes_tolerance_percentage}% smoke tests failed, check more details at <{self.cfr_repo_url}/smoke_test_report.html|Smoke-Test-Report>'
             print(f'More than {self.smokes_tolerance_percentage}% smoke tests failed, check more details at {self.cfr_repo_url}/smoke_test_report.html')
         return success
 
