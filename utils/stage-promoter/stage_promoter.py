@@ -180,6 +180,7 @@ class snapshot_processor:
             else:
                 print(f'All the FBC stage {type} pipelines are successfully completed!!')
                 if type == 'build':
+                    slack_message = f':staging-green: Successfully pushed *{self.rhoai_version} to stage*!'
                     qc = quay_controller('rhoai')
                     fbc_images = {}
                     for ocp_version in self.ocp_versions_for_release:
@@ -190,12 +191,11 @@ class snapshot_processor:
                             sig_tag = f'{tag["manifest_digest"].replace(":", "-")}.sig'
                             signature = qc.get_tag_details(self.FBC_FRAGMENT_REPO, sig_tag)
                             if signature:
-                                fbc_images[ocp_version] = f'{self.QUAY_BASE_URI}/{self.FBC_FRAGMENT_REPO}@{tag["manifest_digest"]}'
+                                fbc_image = f'{self.QUAY_BASE_URI}/{self.FBC_FRAGMENT_REPO}@{tag["manifest_digest"]}'
+                                fbc_images[ocp_version] = fbc_image
+                                slack_message += f'\nFBCF image {ocp_version}: {fbc_image}'
 
                     json.dump(fbc_images, open(self.output_file_path, 'w'))
-                    slack_message = f':staging: Successfully pushed to stage for {self.rhoai_version}!'
-                    for ocp_version, fbc_image in fbc_images.items():
-                        slack_message += f'\nFBCF image {ocp_version}: {fbc_image}'
                     open('utils/slack_message.txt', 'w').write(slack_message)
 
     def monitor_fbc_builds(self):
