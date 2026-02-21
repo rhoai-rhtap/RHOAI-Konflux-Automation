@@ -10,6 +10,9 @@ import base64
 import sys
 class fbc_processor:
     PRODUCTION_REGISTRY = 'registry.redhat.io'
+    # Channel names that are reset from patch (no merge with base catalog).
+    RESET_CHANNELS = {'beta'}
+
     def __init__(self, build_config_path:str, catalog_yaml_path:str, patch_yaml_path:str, single_bundle_path:str, output_file_path:str, push_pipeline_operation:str, push_pipeline_yaml_path:str):
         self.build_config_path = build_config_path
         self.catalog_yaml_path = catalog_yaml_path
@@ -93,10 +96,12 @@ class fbc_processor:
         SCHEMA = 'olm.channel'
         PATCH_SCHEMA = 'olm.channels'
         for channel in self.patch_dict['patch'][PATCH_SCHEMA]:
-            if channel['name'] in self.catalog_dict[SCHEMA]:
+            if channel['name'] in self.catalog_dict[SCHEMA] and channel['name'] not in self.RESET_CHANNELS:
                 self.catalog_dict[SCHEMA][channel['name']] = jsonupdate_ng.updateJson(self.catalog_dict[SCHEMA][channel['name']], channel, meta={'listPatchScheme': {'$.entries': {'key': 'name'}}})
             else:
+                # If reset channel or new channel, take full definition from patch.
                 self.catalog_dict[SCHEMA][channel['name']] = channel
+
 
     def apply_replacements_to_catalog(self, olm_bundle):
         olm_bundle['image'] = self.apply_replacement(olm_bundle['image'])

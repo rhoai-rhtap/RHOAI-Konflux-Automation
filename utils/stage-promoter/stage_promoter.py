@@ -1,4 +1,6 @@
-import os, requests
+import os
+import re
+import requests
 import time
 import openshift_client as oc
 from jsonupdate_ng import jsonupdate_ng
@@ -13,9 +15,14 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 import base64
 import sys
 
+
 class stage_promoter:
     PRODUCTION_REGISTRY = 'registry.redhat.io'
     PACKAGE_NAME = 'rhods-operator'
+    # Channel names that are reset from patch (no merge with base catalog).
+    RESET_CHANNELS = {'beta'}
+    # Version after PACKAGE_NAME.: X.Y.Z-ea.N or X.Y.Z-ea.N.H (H optional). X=0-9, Y/Z=0-99.
+    EA_VERSION_PATTERN = re.compile(r"^[0-9]\.[0-9]{1,2}\.[0-9]{1,2}-ea\.[0-9]+(\.[0-9]+)?$")
 
     def __init__(self, catalog_yaml_path:str, patch_yaml_path:str, release_catalog_yaml_path:str, output_file_path:str, rhoai_version:str):
         self.catalog_yaml_path = catalog_yaml_path
@@ -89,14 +96,84 @@ class stage_promoter:
         SCHEMA = 'olm.channel'
         PATCH_SCHEMA = 'olm.channels'
         for channel in self.patch_dict['patch'][PATCH_SCHEMA]:
-            if channel['name'] in self.catalog_dict[SCHEMA]:
+            if channel['name'] in self.catalog_dict[SCHEMA] and channel['name'] not in self.RESET_CHANNELS:
                 self.catalog_dict[SCHEMA][channel['name']] = jsonupdate_ng.updateJson(self.catalog_dict[SCHEMA][channel['name']], channel, meta={'listPatchScheme': {'$.entries': {'key': 'name'}}})
             else:
+                # If reset channel or new channel, take full definition from patch.
                 self.catalog_dict[SCHEMA][channel['name']] = channel
 
+        # Keep only the latest EA drop in the beta channel to support fresh install only.
+        if 'beta' in self.catalog_dict[SCHEMA]:
+            self.prune_channel_to_latest_ea(SCHEMA, 'beta')
+
+    # updates a given OLM channel so that only the latest Early Access (EA) version remains in entries.
+    def prune_channel_to_latest_ea(self, schema, channel_name):
+        channel = self.catalog_dict[schema][channel_name]
+        entries = [e for e in (channel.get('entries') or []) if e.get('name')]
+        ea = [e for e in entries if 'ea' in (e.get('name') or '')]
+        if not ea:
+            return
+        # How largest is decided: key = (release, ea_segments). Tuples compared left-to-right (lexicographic).
+        # Example keys:
+        #   3.4.0-ea.1   -> ((3, 4, 0), (1,))
+        #   3.4.0-ea.1.1 -> ((3, 4, 0), (1, 1))
+        #   3.14.0-ea.2  -> ((3, 14, 0), (2,))
+        # Step 1: compare release; (3,4,0) < (3,14,0) so 3.14.0-ea.2 wins over 3.4.0-ea.*.
+        # Step 2: if release equal, compare ea_segments; (1,) < (1,1) so ea.1.1 > ea.1. max() picks entry with largest key.
+        latest_ea_entry = max(ea, key=lambda e: self.parse_ea_entry_name(e['name']))
+        channel['entries'] = [{'name': latest_ea_entry['name']}]
+
+    def parse_ea_entry_name(self, entry_name: str):
+        """
+        Parse EA OLM entry name into a comparable tuple for ordering. Raises ValueError if invalid.
+
+        entry_name must be in the below format:
+        - rhods-operator.X.Y.Z-ea.N
+        - rhods-operator.X.Y.Z-ea.N.H
+        X = 0-9, Y/Z = 0-99, N/H = non-negative integers.
+
+        Returns:
+            (release, ea_segments): Comparable tuple for ordering. Example:
+                parse_ea_entry_name("rhods-operator.3.4.0-ea.1.1") -> ((3, 4, 0), (1, 1))
+        """
+        entry_name = entry_name.strip()
+        prefix = self.PACKAGE_NAME + "."
+        version_str = entry_name[len(prefix):] if entry_name.startswith(prefix) else ""
+        if not version_str or not self.EA_VERSION_PATTERN.match(version_str):
+            raise ValueError(
+                f"Invalid EA version for entry {entry_name!r}: must be {prefix!r} followed by "
+                "X.Y.Z-ea.N or X.Y.Z-ea.N.H (e.g. 3.4.0-ea.1, 3.4.0-ea.1.1)"
+            )
+        s = version_str
+        base, _, suffix = s.partition("-ea")
+        base = base.strip(".-")
+        suffix = suffix.strip(".")
+        try:
+            parts = [x for x in base.split(".") if x]
+            if len(parts) != 3:
+                raise ValueError(f"Release must be exactly X.Y.Z, got {base!r}")
+            release = tuple(int(x) for x in parts)
+            x_val, y_val, z_val = release
+            if not (0 <= x_val <= 9):
+                raise ValueError(f"X must be 0-9, got {x_val}")
+            if not (0 <= y_val <= 99 and 0 <= z_val <= 99):
+                raise ValueError(f"Y and Z must be 0-99, got {y_val}, {z_val}")
+        except ValueError as err:
+            raise ValueError(f"Invalid EA version for entry {entry_name!r}: {err}") from err
+        if not suffix:
+            ea_segments = (0,)
+        else:
+            try:
+                ea_segments = tuple(int(x) for x in suffix.split(".") if x)
+            except ValueError as err:
+                raise ValueError(f"Invalid EA version for entry {entry_name!r}: {err}") from err
+            if not ea_segments:
+                ea_segments = (0,)
+        return (release, ea_segments)
 
     def patch_olm_bundles(self):
         return self.patch_current_release_bundle_schema()
+
 
 class snapshot_processor:
     GIT_URL_LABEL_KEY = 'git.url'
