@@ -6,7 +6,8 @@ import itertools
 import re
 
 class catalog_validator:
-    MISSING_BUNDLE_EXCEPTIONS = ['rhods-operator.2.9.0', 'rhods-operator.2.9.1'] #ref - RHOAIENG-8828
+    MISSING_CATALOG_EXCEPTIONS = ['rhods-operator.2.9.0', 'rhods-operator.2.9.1'] #ref - RHOAIENG-8828
+    MISSING_PCC_EXCEPTIONS = ['rhods-operator.2.9.0', 'rhods-operator.2.9.1', 'rhods-operator.3.3.0'] #ref - RHOAIENG-8828
     MIN_OCP_VERSION_FOR_RHOAI_30 = 419
 
     class rhods_operator:
@@ -62,7 +63,7 @@ class catalog_validator:
 
             for rhoai_version in self.shipped_rhoai_versions:
                 operator_name = f'rhods-operator.{rhoai_version}'
-                if operator_name not in bundles and operator_name not in self.MISSING_BUNDLE_EXCEPTIONS:
+                if operator_name not in bundles and operator_name not in self.MISSING_CATALOG_EXCEPTIONS:
                     if not (rhoai_version.startswith(
                             'v3') and numeric_ocp_version < self.MIN_OCP_VERSION_FOR_RHOAI_30):  # bypassing check for 3.0 for OCP < 4.19
                         print(f"Skipping the catalog validation for {rhoai_version} bundle for OCP {ocp_version}, since 3.x is not shipped on this OCP version!")
@@ -111,7 +112,7 @@ class catalog_validator:
 
             for rhoai_version in self.shipped_rhoai_versions:
                 operator_name = f'rhods-operator.{rhoai_version}'
-                if operator_name not in bundles and operator_name not in self.MISSING_BUNDLE_EXCEPTIONS:
+                if operator_name not in bundles and operator_name not in self.MISSING_PCC_EXCEPTIONS:
                     if not (rhoai_version.startswith('v3') and numeric_ocp_version < self.MIN_OCP_VERSION_FOR_RHOAI_30): # bypassing check for 3.0 for OCP < 4.19
                         if not self.rhods_operator(operator_name) >= self.rhods_operator(discontinuity_map[ocp_version]) and not self.rhods_operator(operator_name) <= self.rhods_operator(onboarding_map[ocp_version]):
                             missing_bundles[pcc_file].append(operator_name)
