@@ -39,7 +39,7 @@ class stage_promoter:
     # Version after PACKAGE_NAME.: X.Y.Z-ea.N or X.Y.Z-ea.N.H (H optional). X=0-9, Y/Z=0-99.
     EA_VERSION_PATTERN = re.compile(r"^[0-9]\.[0-9]{1,2}\.[0-9]{1,2}-ea\.[0-9]+(\.[0-9]+)?$")
 
-    def __init__(self, catalog_yaml_path:str, patch_yaml_path:str, release_catalog_yaml_path:str, output_file_path:str, rhoai_version:str, ocp_version:str, purge_bundles:str, skip_ea_pruning:bool=False):
+    def __init__(self, catalog_yaml_path:str, patch_yaml_path:str, release_catalog_yaml_path:str, output_file_path:str, rhoai_version:str, ocp_version:str, purge_bundles:str, skip_ea_pruning:bool=False, skip_purge:bool=False):
         self.catalog_yaml_path = catalog_yaml_path
 
         if ocp_version:
@@ -61,6 +61,7 @@ class stage_promoter:
         self.patch_dict = self.parse_patch_yaml()
         self.rhoai_version = rhoai_version
         self.skip_ea_pruning = skip_ea_pruning
+        self.skip_purge = skip_purge
         self.current_bundle_name = f'{self.PACKAGE_NAME}.{self.rhoai_version.lower().strip("v")}'
 
     def parse_catalog_yaml(self):
@@ -103,7 +104,8 @@ class stage_promoter:
             if 'olm.channels' in self.patch_dict['patch']:
                 self.patch_olm_channels()
 
-            self.purge_unused_olm_bundles()
+            if not self.skip_purge:
+                self.purge_unused_olm_bundles()
             self.write_output_catalog()
 
     def purge_olm_bundles(self, purge_bundles):
@@ -512,10 +514,12 @@ if __name__ == '__main__':
     parser.add_argument('-bt', '--build-type', required=False, default='nightly', dest='build_type')
     parser.add_argument('--skip-ea-pruning', action='store_true', default=False,
                         help='Skip EA pruning of the beta channel (for older releases without EA versions)', dest='skip_ea_pruning')
+    parser.add_argument('--skip-purge', action='store_true', default=False,
+                        help='Skip purging unused olm.bundles (for multi-branch runs where bundles are added incrementally)', dest='skip_purge')
     args = parser.parse_args()
 
     if args.operation.lower() == 'stage-catalog-patch':
-        promoter = stage_promoter(catalog_yaml_path=args.catalog_yaml_path, patch_yaml_path=args.patch_yaml_path, release_catalog_yaml_path=args.release_catalog_yaml_path, output_file_path=args.output_file_path, rhoai_version=args.rhoai_version, ocp_version=args.ocp_version, purge_bundles=args.purge_bundles, skip_ea_pruning=args.skip_ea_pruning)
+        promoter = stage_promoter(catalog_yaml_path=args.catalog_yaml_path, patch_yaml_path=args.patch_yaml_path, release_catalog_yaml_path=args.release_catalog_yaml_path, output_file_path=args.output_file_path, rhoai_version=args.rhoai_version, ocp_version=args.ocp_version, purge_bundles=args.purge_bundles, skip_ea_pruning=args.skip_ea_pruning, skip_purge=args.skip_purge)
         promoter.patch_catalog_yaml()
     elif args.operation.lower() == 'monitor-fbc-builds':
         processor = snapshot_processor(rhoai_version=args.rhoai_version, build_config_path=args.build_config_path, timeout=args.timeout, output_file_path=args.output_file_path, git_commit=args.git_commit, pipelineruns=args.pipelineruns, pipeline_type=args.pipeline_type, failed_pipelines_info_path=args.failed_pipelines_info_path)
