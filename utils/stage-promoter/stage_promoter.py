@@ -39,7 +39,7 @@ class stage_promoter:
     # Version after PACKAGE_NAME.: X.Y.Z-ea.N or X.Y.Z-ea.N.H (H optional). X=0-9, Y/Z=0-99.
     EA_VERSION_PATTERN = re.compile(r"^[0-9]\.[0-9]{1,2}\.[0-9]{1,2}-ea\.[0-9]+(\.[0-9]+)?$")
 
-    def __init__(self, catalog_yaml_path:str, patch_yaml_path:str, release_catalog_yaml_path:str, output_file_path:str, rhoai_version:str, ocp_version:str, purge_bundles:str):
+    def __init__(self, catalog_yaml_path:str, patch_yaml_path:str, release_catalog_yaml_path:str, output_file_path:str, rhoai_version:str, ocp_version:str, purge_bundles:str, skip_ea_pruning:bool=False):
         self.catalog_yaml_path = catalog_yaml_path
 
         if ocp_version:
@@ -60,12 +60,12 @@ class stage_promoter:
             self.purge_olm_bundles(purge_bundles.split(","))
         self.patch_dict = self.parse_patch_yaml()
         self.rhoai_version = rhoai_version
+        self.skip_ea_pruning = skip_ea_pruning
         self.current_bundle_name = f'{self.PACKAGE_NAME}.{self.rhoai_version.lower().strip("v")}'
 
     def parse_catalog_yaml(self):
         # objs = yaml.safe_load_all(open(self.catalog_yaml_path))
         objs = ruyaml.load_all(open(self.catalog_yaml_path), Loader=ruyaml.RoundTripLoader, preserve_quotes=True)
-        print(type(objs))
         catalog_dict = defaultdict(dict)
         for obj in objs:
             catalog_dict[obj['schema']][obj['name']] = obj
@@ -150,7 +150,7 @@ class stage_promoter:
         supports_ea_drops = OpenshiftVersion(self.ocp_version) >= OpenshiftVersion('v4.19')
 
         # Keep only the latest EA drop in the beta channel to support fresh install only.
-        if 'beta' in self.catalog_dict[SCHEMA] and supports_ea_drops:
+        if 'beta' in self.catalog_dict[SCHEMA] and supports_ea_drops and not self.skip_ea_pruning:
             self.prune_channel_to_latest_ea(SCHEMA, 'beta')
 
     # updates a given OLM channel so that only the latest Early Access (EA) version remains in entries.
@@ -510,10 +510,12 @@ if __name__ == '__main__':
     parser.add_argument('-cfr', '--conforma-results-file-path', required=False, default='', dest='conforma_results_file_path')
     parser.add_argument('-smr', '--smokes-results-file-path', required=False, default='', dest='smokes_results_file_path')
     parser.add_argument('-bt', '--build-type', required=False, default='nightly', dest='build_type')
+    parser.add_argument('--skip-ea-pruning', action='store_true', default=False,
+                        help='Skip EA pruning of the beta channel (for older releases without EA versions)', dest='skip_ea_pruning')
     args = parser.parse_args()
 
     if args.operation.lower() == 'stage-catalog-patch':
-        promoter = stage_promoter(catalog_yaml_path=args.catalog_yaml_path, patch_yaml_path=args.patch_yaml_path, release_catalog_yaml_path=args.release_catalog_yaml_path, output_file_path=args.output_file_path, rhoai_version=args.rhoai_version, ocp_version=args.ocp_version, purge_bundles=args.purge_bundles)
+        promoter = stage_promoter(catalog_yaml_path=args.catalog_yaml_path, patch_yaml_path=args.patch_yaml_path, release_catalog_yaml_path=args.release_catalog_yaml_path, output_file_path=args.output_file_path, rhoai_version=args.rhoai_version, ocp_version=args.ocp_version, purge_bundles=args.purge_bundles, skip_ea_pruning=args.skip_ea_pruning)
         promoter.patch_catalog_yaml()
     elif args.operation.lower() == 'monitor-fbc-builds':
         processor = snapshot_processor(rhoai_version=args.rhoai_version, build_config_path=args.build_config_path, timeout=args.timeout, output_file_path=args.output_file_path, git_commit=args.git_commit, pipelineruns=args.pipelineruns, pipeline_type=args.pipeline_type, failed_pipelines_info_path=args.failed_pipelines_info_path)
