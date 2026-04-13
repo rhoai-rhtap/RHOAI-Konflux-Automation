@@ -111,6 +111,7 @@ class catalog_validator:
         global_ocp_versions = self.global_config['config']['supported-ocp-versions']
         self.discontinuity_map = {entry['version']: entry['discontinued-from'] if 'discontinued-from' in entry else 'rhods-operator.9.99.99' for entry in global_ocp_versions}
         self.onboarding_map = {entry['version']: entry['onboarded-since'] if 'onboarded-since' in entry else 'rhods-operator.0.0.0' for entry in global_ocp_versions}
+        self.skip_bundles_map = {entry['version']: entry['skip-bundles'] if 'skip-bundles' in entry else [] for entry in global_ocp_versions}
 
         self.shipped_rhoai_versions = open(self.shipped_rhoai_versions_path).readlines()
 
@@ -154,6 +155,10 @@ class catalog_validator:
                     continue
 
                 if operator_name in self.MISSING_BUNDLE_EXCEPTIONS:
+                    continue
+
+                if operator_name in self.skip_bundles_map[ocp_version]:
+                    print(f'{operator_name} is in skip-bundles list for OCP {ocp_version}. Skipping')
                     continue
 
                 if is_3x_on_unsupported_ocp:
@@ -218,6 +223,10 @@ class catalog_validator:
                     continue
 
                 if operator_name in self.MISSING_BUNDLE_EXCEPTIONS:
+                    continue
+
+                if operator_name in self.skip_bundles_map[ocp_version]:
+                    print(f'{operator_name} is in skip-bundles list for OCP {ocp_version}. Skipping')
                     continue
 
                 if is_3x_on_unsupported_ocp:  # bypassing check for 3.0 for OCP < 4.19
