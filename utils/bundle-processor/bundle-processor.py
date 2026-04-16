@@ -58,6 +58,8 @@ class bundle_processor:
             self.csv_dict['metadata']['annotations']['containerImage'] = DoubleQuotedScalarString(ODH_OPERATOR_IMAGE[0])
             self.csv_dict['spec']['install']['spec']['deployments'][0]['spec']['template']['spec']['containers'][0][
                 'image'] = DoubleQuotedScalarString(ODH_OPERATOR_IMAGE[0])
+            self.csv_dict['spec']['install']['spec']['deployments'][0]['spec']['template']['spec']['initContainers'][0][
+                'image'] = DoubleQuotedScalarString(ODH_OPERATOR_IMAGE[0])
 
         self.latest_images = self.get_latest_images_from_operands_map()
         self.apply_replacements_to_related_images()
