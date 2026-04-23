@@ -217,8 +217,6 @@ class catalog_validator:
                     rhoai_version.startswith('3')
                     and numeric_ocp_version < self.MIN_OCP_VERSION_FOR_RHOAI_30
                 )
-                missing_from_bundle = (operator_name not in bundles)
-
                 if operator_name in bundles:
                     continue
 
@@ -234,10 +232,14 @@ class catalog_validator:
 
                 if self.rhods_operator(operator_name) >= self.rhods_operator(self.discontinuity_map[ocp_version]) \
                         or self.rhods_operator(operator_name) < self.rhods_operator(self.onboarding_map[ocp_version]):
-
                     print(f'Ignoring missing {operator_name} since OCP {ocp_version} is not supported for it')
-                else:
-                    missing_bundles[pcc_file].append(operator_name)
+                    continue
+
+                if not self.rhods_operator(operator_name).is_latest_ea(bundles):
+                    print(f'Ignoring missing {operator_name} since it is expected to be overwritten by a newer EA release')
+                    continue
+
+                missing_bundles[pcc_file].append(operator_name)
 
 
 
