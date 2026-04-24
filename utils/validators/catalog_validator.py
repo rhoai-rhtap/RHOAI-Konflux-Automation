@@ -196,8 +196,8 @@ class catalog_validator:
             print('No incorrect 3.x bundles found in all the catalogs')
 
         if bundles_missing or bundles_incorrect:
-            # sys.exit(1)
-            print('should have exited here')
+            print('should exite here')
+            sys.exit(1)
 
     def validate_pcc(self):
         missing_bundles = {}
