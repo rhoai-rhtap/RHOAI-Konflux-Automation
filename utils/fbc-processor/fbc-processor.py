@@ -157,6 +157,7 @@ class fbc_processor:
                 bundle_name = entry['name']
                 referenced_bundles.add(bundle_name)
         to_delete = [name for name in self.catalog_dict['olm.bundle'] if name not in referenced_bundles]
+        print(f'to_delete: {to_delete}')
         self.purge_olm_bundles(to_delete)
              
         
@@ -166,7 +167,6 @@ class fbc_processor:
         current_bundle_name = self.current_olm_bundle['name']
         print(f'current_bundle_name: {current_bundle_name}')
         patched = False
-        print(f'patching {SCHEMA}')
         print(f'self.catalog_dict[SCHEMA]: {self.catalog_dict[SCHEMA]}')
         if current_bundle_name not in self.catalog_dict[SCHEMA]:
             print(f'adding {current_bundle_name} to catalog')
@@ -324,13 +324,13 @@ if __name__ == '__main__':
         processor = snapshot_processor(snapshot_json_path=args.snapshot_json_path, output_file_path=args.output_file_path, image_filter=args.image_filter, rhoai_version=args.rhoai_version, build_config_path=args.build_config_path, catalog_build_args_file_path=args.catalog_build_args_file_path, build_type=args.build_type)
         processor.get_all_latest_images()
 
-        # c = '/home/dchouras/RHODS/DevOps/FBC/main/catalog/v4.13/rhods-operator/catalog.yaml'
-        # p = '/home/dchouras/RHODS/DevOps/RHOAI-Build-Config/catalog/catalog-patch.yaml'
-        # s = '/home/dchouras/RHODS/DevOps/FBC/fbc-utils/utils/single_bundle_catalog_semver.yaml'
+        # c = '/Users/dchouras/RHODS/DevOps/RBC_MAIN/pcc/catalog-v4.18.yaml'
+        # p = '/Users/dchouras/RHODS/DevOps/RBC-RHDS/catalog/catalog-patch.yaml'
+        # s = '/Users/dchouras/RHODS/DevOps/FBC/fbc-utils/utils/single_bundle_catalog_semver.yaml'
         # o = 'output.yaml'
-        # b = '/home/dchouras/RHODS/DevOps/FBC/fbc-utils/utils/build-config.yaml'
-        # push_pipeline_operation = 'enable'
-        # push_pipeline_yaml_path = '/home/dchouras/RHODS/DevOps/RHOAI-Build-Config/.tekton/odh-operator-bundle-v2-13-push.yaml'
+        # b = '/Users/dchouras/RHODS/DevOps/RBC-RHDS/config/build-config.yaml'
+        # push_pipeline_operation = 'disable'
+        # push_pipeline_yaml_path = '/Users/dchouras/RHODS/DevOps/RBC-RHDS/.tekton/rhoai-fbc-fragment-v2-25-push.yaml'
         # processor = fbc_processor(build_config_path=b, catalog_yaml_path=c, patch_yaml_path=p, single_bundle_path=s, output_file_path=o,
-        #                               push_pipeline_yaml_path=push_pipeline_yaml_path, push_pipeline_operation=push_pipeline_operation)
+        #                               push_pipeline_yaml_path=push_pipeline_yaml_path, push_pipeline_operation=push_pipeline_operation, purge_bundles='')
         # processor.patch_catalog_yaml()
