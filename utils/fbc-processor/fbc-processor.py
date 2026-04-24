@@ -167,7 +167,7 @@ class fbc_processor:
         current_bundle_name = self.current_olm_bundle['name']
         print(f'current_bundle_name: {current_bundle_name}')
         patched = False
-        print(f'self.catalog_dict[SCHEMA]: {self.catalog_dict[SCHEMA]}')
+        print(f'patching {SCHEMA}')
         if current_bundle_name not in self.catalog_dict[SCHEMA]:
             print(f'adding {current_bundle_name} to catalog')
             self.catalog_dict[SCHEMA][current_bundle_name] = self.apply_replacements_to_catalog(self.current_olm_bundle)
