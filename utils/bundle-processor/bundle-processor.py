@@ -14,6 +14,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 import json
 class bundle_processor:
     PRODUCTION_REGISTRY = 'registry.redhat.io'
+    STAGE_REGISTRY = 'registry.stage.redhat.io'
     OPERATOR_NAME = 'rhods-operator'
     GIT_URL_LABEL_KEY = 'git.url'
     GIT_COMMIT_LABEL_KEY = 'git.commit'
@@ -212,8 +213,11 @@ class bundle_processor:
                 }
                 for image in additional_images_dict['additionalImages']
             }.values())
-            # Merge additional images patch
-            merged_image_list = self.latest_images + additional_images
+            # Merge additional images patch. Additional images take precedence
+            # over latest_images for the same name (preserves stage registry URLs).
+            merged_map = {img['name']: img for img in self.latest_images}
+            merged_map.update({img['name']: img for img in additional_images})
+            merged_image_list = list(merged_map.values())
         else:
             print("Warning: additional-related-images key not found")
             merged_image_list = self.latest_images
@@ -224,7 +228,7 @@ class bundle_processor:
             'env'] = env_object['env']
         relatedImages = []
         for name, value in self.csv_dict['metadata']['annotations'].items():
-            if value.startswith(self.PRODUCTION_REGISTRY) and '@sha256:' in value:
+            if (value.startswith(self.PRODUCTION_REGISTRY) or value.startswith(self.STAGE_REGISTRY)) and '@sha256:' in value:
                 relatedImages.append({'name': f'{value.split("/")[-1].replace("@sha256:", "-")}-annotation', 'image': value})
         relatedImages += [{'name': image['name'].replace('RELATED_IMAGE_', '').lower(), 'image': image['value']} for image in merged_image_list]
         self.csv_dict['spec']['relatedImages'] = relatedImages
