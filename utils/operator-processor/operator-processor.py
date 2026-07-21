@@ -17,12 +17,13 @@ class operator_processor:
     GIT_URL_LABEL_KEY = 'git.url'
     GIT_COMMIT_LABEL_KEY = 'git.commit'
 
-    def __init__(self, patch_yaml_path:str, rhoai_version:str, operands_map_path:str, nudging_yaml_path:str, manifest_config_path:str, push_pipeline_operation:str, push_pipeline_yaml_path:str):
+    def __init__(self, patch_yaml_path:str, rhoai_version:str, operands_map_path:str, nudging_yaml_path:str, manifest_config_path:str, push_pipeline_operation:str, push_pipeline_yaml_path:str, use_existing_digests:bool=False):
         self.patch_yaml_path = patch_yaml_path
         self.operands_map_path = operands_map_path
         self.nudging_yaml_path = nudging_yaml_path
         self.manifest_config_path = manifest_config_path
         self.rhoai_version = rhoai_version
+        self.use_existing_digests = use_existing_digests
 
         self.patch_dict = self.parse_patch_yaml()
 
@@ -42,8 +43,13 @@ class operator_processor:
     def generate_latest_operands_map(self):
         self.sync_yamls_from_bundle_patch()
 
-        self.latest_images, self.git_labels_meta = [], {}
-        self.latest_images, self.git_labels_meta = self.get_all_latest_images_using_operands_map()
+        if self.use_existing_digests:
+            print('--use-existing-digests: Skipping Quay tag lookup, fetching git metadata only...')
+            self.git_labels_meta = self.get_git_metadata_for_existing_digests()
+            self.latest_images = None
+        else:
+            self.latest_images, self.git_labels_meta = [], {}
+            self.latest_images, self.git_labels_meta = self.get_all_latest_images_using_operands_map()
 
         if self.latest_images:
             self.update_operands_map()
@@ -187,6 +193,34 @@ class operator_processor:
         print('git_labels_meta', json.dumps(git_labels_meta, indent=4))
         return latest_images, git_labels_meta
 
+    def get_git_metadata_for_existing_digests(self):
+        """Fetch git labels from Quay using existing digests. No tag lookup."""
+        git_labels_meta = {'map': {}}
+        for image_entry in [img for img in self.operands_map_dict['relatedImages']
+                            if 'FBC' not in img['name'] and 'BUNDLE' not in img['name']
+                            and 'ODH_OPERATOR' not in img['name']]:
+            image_value = str(image_entry['value'])
+            parts = image_value.split('@')[0].split('/')
+            org = parts[1]
+            repo = '/'.join(parts[2:])
+            component_name = repo.replace('-rhel8', '').replace('-rhel9', '') if repo.endswith(('-rhel8', '-rhel9')) else repo
+            manifest_digest = image_value.split('@')[1]
+
+            qc = quay_controller(org)
+            manifest_details = qc.get_manifest_details(repo, manifest_digest)
+            if manifest_details.get('is_manifest_list'):
+                arch_digests = qc.get_image_manifest_digests_for_all_the_supported_archs(repo, manifest_digest)
+                if arch_digests:
+                    manifest_digest = arch_digests[0]
+
+            labels = qc.get_git_labels(repo, manifest_digest)
+            labels = {l['key']: l['value'] for l in labels if l['value']}
+            git_labels_meta['map'][component_name] = {
+                self.GIT_URL_LABEL_KEY: labels.get(self.GIT_URL_LABEL_KEY, ''),
+                self.GIT_COMMIT_LABEL_KEY: labels.get(self.GIT_COMMIT_LABEL_KEY, ''),
+            }
+        print('git_labels_meta', json.dumps(git_labels_meta, indent=4))
+        return git_labels_meta
 
 
 def str_presenter(dumper, data):
@@ -287,10 +321,24 @@ if __name__ == '__main__':
                         help='Path of the tekton pipeline for push builds', dest='push_pipeline_yaml_path')
     parser.add_argument('-x', '--push-pipeline-operation', required=False, default="enable",
                         help='Operation code, supported values are "enable" and "disable"', dest='push_pipeline_operation')
+    parser.add_argument('--use-existing-digests', action='store_true', default=False,
+                        help='Preserve existing image refs and digests instead of fetching latest from Quay. '
+                             'Skips Quay tag lookup but still fetches git metadata. '
+                             'Use for embargo nudging where rhoai-private refs must be preserved.',
+                        dest='use_existing_digests')
     args = parser.parse_args()
 
     if args.operation.lower() == 'process-operator-yamls':
-        processor = operator_processor(patch_yaml_path=args.patch_yaml_path, rhoai_version=args.rhoai_version, operands_map_path=args.operands_map_path, nudging_yaml_path=args.nudging_yaml_path, manifest_config_path=args.manifest_config_path, push_pipeline_operation=args.push_pipeline_operation, push_pipeline_yaml_path=args.push_pipeline_yaml_path)
+        processor = operator_processor(
+            patch_yaml_path=args.patch_yaml_path,
+            rhoai_version=args.rhoai_version,
+            operands_map_path=args.operands_map_path,
+            nudging_yaml_path=args.nudging_yaml_path,
+            manifest_config_path=args.manifest_config_path,
+            push_pipeline_operation=args.push_pipeline_operation,
+            push_pipeline_yaml_path=args.push_pipeline_yaml_path,
+            use_existing_digests=args.use_existing_digests,
+        )
         processor.generate_latest_operands_map()
 
     # patch_yaml_path = '/home/dchouras/RHODS/DevOps/RHOAI-Build-Config/bundle/bundle-patch.yaml'
