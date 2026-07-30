@@ -90,8 +90,12 @@ class operator_processor:
         missing_git_labels = []
         for component, manifest_config in self.manifest_config_dict['map'].items():
             if 'ref_type' not in manifest_config or ('ref_type' in manifest_config and manifest_config['ref_type'] != 'branch'):
-                git_url = self.git_labels_meta['map'][component][self.GIT_URL_LABEL_KEY]
-                git_commit = self.git_labels_meta['map'][component][self.GIT_COMMIT_LABEL_KEY]
+                component_meta = self.git_labels_meta['map'].get(component)
+                if component_meta is None:
+                    print(f'WARNING: {component} in manifests-config but not in build metadata — possibly offboarded, skipping')
+                    continue
+                git_url = component_meta.get(self.GIT_URL_LABEL_KEY, '')
+                git_commit = component_meta.get(self.GIT_COMMIT_LABEL_KEY, '')
                 if git_url and git_commit:
                     manifest_config[self.GIT_URL_LABEL_KEY] = git_url
                     manifest_config[self.GIT_COMMIT_LABEL_KEY] = git_commit
@@ -307,5 +311,6 @@ if __name__ == '__main__':
     #                                manifest_config_path=manifest_config_path,
     #                              push_pipeline_yaml_path=push_pipeline_yaml_path, push_pipeline_operation=push_pipeline_operation)
     # processor.generate_latest_operands_map()
+
 
 
