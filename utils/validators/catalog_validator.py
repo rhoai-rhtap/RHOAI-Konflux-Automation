@@ -170,8 +170,8 @@ class catalog_validator:
                     print(f'Ignoring missing {operator_name} since OCP {ocp_version} is not supported for it')
                     continue
 
-                if not self.rhods_operator(operator_name).is_latest_ea(bundles):
-                    print(f'Ignoring missing {operator_name} since it is expected to be overwritten by a newer EA release')
+                if '-ea.' in rhoai_version:
+                    print(f'Ignoring missing {operator_name} since EA bundles are branch-scoped and not expected in all catalogs')
                     continue
 
                 missing_bundles[ocp_version].append(operator_name)
@@ -236,8 +236,8 @@ class catalog_validator:
                     print(f'Ignoring missing {operator_name} since OCP {ocp_version} is not supported for it')
                     continue
 
-                if not self.rhods_operator(operator_name).is_latest_ea(bundles):
-                    print(f'Ignoring missing {operator_name} since it is expected to be overwritten by a newer EA release')
+                if '-ea.' in rhoai_version:
+                    print(f'Ignoring missing {operator_name} since EA bundles are branch-scoped and not expected in all catalogs')
                     continue
 
                 missing_bundles[pcc_file].append(operator_name)
